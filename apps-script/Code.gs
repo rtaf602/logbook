@@ -1,16 +1,20 @@
 /**
  * 602 LOG BOOK — ฐานข้อมูลหลังบ้าน (Google Apps Script)
- * ติดตั้งในไฟล์ "602DB_LOG BOOK ปีงบ70_ต้นทาง" (บัญชี ohomee.aviation@gmail.com)
- * ส่วนขยาย → Apps Script → วางไฟล์นี้ → เรียก setup() 1 ครั้ง → ทำให้ใช้งานได้ (Deploy) เป็น Web app
+ * ติดตั้งครั้งเดียวในไฟล์ "602DB_LOG BOOK ปีงบ70_ต้นทาง" (บัญชี ohomee.aviation@gmail.com)
+ * ส่วนขยาย → Apps Script → วางไฟล์นี้ + Seed.gs → เรียก setup() 1 ครั้ง → ทำให้ใช้งานได้ (Deploy) เป็น Web app
  *
- * ชีทในไฟล์นี้ (ชีทที่ 1 รายชื่อสนามบิน อยู่ในไฟล์แยก):
+ * สคริปต์ตัวเดียวดูแลทุกปีงบ — ขึ้นปีงบใหม่ให้ ADMIN เพิ่มจากหน้าเว็บ (ภาพรวม → เพิ่มปีงบใหม่) ไม่ต้องแก้โค้ด
+ * อย่าลบไฟล์ปีงบ 70 เพราะสคริปต์อยู่ในไฟล์นั้น
+ *
+ * ชีทในไฟล์ต้นทางแต่ละปี (ชีทที่ 1 รายชื่อสนามบิน อยู่ในไฟล์แยก):
  *   2 ประวัติแก้ไข-ลบ · 3 602YEAR_LOG BOOK · 4 ชั่วโมงจัดสรร · 5 เครื่อง-รหัส-ภารกิจ · 6 อ่านก่อน
  */
 
 // ======================= ตั้งค่า =======================
 const CFG = {
-  FY: 2570,                                                      // ปีงบของไฟล์นี้ (1 ต.ค.69 – 30 ก.ย.70)
-  SHEET_ID: '1KpUmauu8c9acPEmNMOGWyBTzg8B2uNVb0DYAjE2_6dM',      // ไฟล์ต้นทาง (ไฟล์นี้)
+  FY: 2570,                                                      // ปีงบแรก (ไฟล์ที่ติดตั้งสคริปต์)
+  SHEET_ID: '1KpUmauu8c9acPEmNMOGWyBTzg8B2uNVb0DYAjE2_6dM',      // 602DB_LOG BOOK ปีงบ70_ต้นทาง
+  DISPLAY_ID: '15fWBt6mn1g-cGDnR-PYDB6_IR16a74yhVhh8MfoUZ9A',    // 602DB_LOG BOOK ปีงบ70_แสดงผล
   AIRPORT_SHEET_ID: '1desVWlj1x8E_05EP6rTa7Rj9CfjY6-t10SlB1DPUdrs', // ชีทที่ 1 รายชื่อสนามบิน
   BACKUP_FOLDER_ID: '1x6iMd_fcg5wcBnKlR-4k9zHF9PLoa1wv',         // โฟลเดอร์ 602DB_สำรองรายวัน
   BACKUP_KEEP_DAYS: 30,
@@ -28,7 +32,7 @@ const TYPE_ID = { 'เดโชชัย': 'dechochai', 'บุคคลสำ�
 const GROUP_NAME = { '15': 'บ.ล.๑๕/ก (AIRBUS 319 CJ/ACJ320)', '18': 'บ.ล.๑๘ (SSJ100LR)', '19': 'บ.ล.๑๙ (AIRBUS 340-500)' };
 const CODE_GROUP = { 'บ.ล.15': '15', 'บ.ล.15ก': '15', 'บ.ล.18': '18', 'บ.ล.19': '19' };
 
-// คอลัมน์ชีท 3 (ลำดับห้ามเปลี่ยน — เว็บและสคริปต์อ้างตำแหน่งนี้)
+// คอลัมน์ชีท 3 (ลำดับห้ามเปลี่ยน — สคริปต์อ้างตำแหน่งนี้)
 const LOG_COLS = [
   ['id', 'รหัสรายการ', 11], ['fy', 'ปีงบ', 7], ['ym', 'เดือน\n(ปี-เดือน)', 10], ['date', 'วันที่ภารกิจ', 12], ['type', 'ประเภท', 12],
   ['aircraft', 'แบบ บ.', 18], ['code', 'รหัส บ.ล.', 9], ['mission', 'ภารกิจ', 44], ['route', 'เส้นทาง', 30], ['scope', 'ใน/ต่างประเทศ', 11],
@@ -43,7 +47,7 @@ const HIST_COLS = ['ลำดับ', 'เวลาที่ทำรายก�
 const ALLOC_COLS = ['ปีงบ', 'กลุ่ม', 'แบบ บ. (กลุ่ม)', 'รายการ', 'ชนิดชั่วโมง', 'ได้รับเดือนที่\n(1=ต.ค. … 11=ส.ค.)', 'ชั่วโมง\n(ต้นปี = ยอดทั้งปี\nRevise = เพิ่ม/ลด)', 'ผู้บันทึก', 'เวลาบันทึก', 'หมายเหตุ'];
 
 // ======================= Web app =======================
-function doGet() { return json_({ ok: true, service: '602 LOG BOOK', fy: CFG.FY, time: new Date().toISOString() }); }
+function doGet() { return json_({ ok: true, service: '602 LOG BOOK', years: Object.keys(registry_()).map(Number), time: new Date().toISOString() }); }
 
 function doPost(e) {
   let req = {};
@@ -51,14 +55,18 @@ function doPost(e) {
   try {
     if (!checkHash_(req.key, prop_('ENTRY_HASH', CFG.ENTRY_HASH))) return json_({ ok: false, code: 'auth', error: 'รหัสเข้าใช้งานไม่ถูกต้อง' });
     const admin = () => { if (!checkHash_(req.admin, prop_('ADMIN_HASH', CFG.ADMIN_HASH))) throw httpErr_('auth', 'รหัส ADMIN ไม่ถูกต้อง'); };
+    const reg = registry_(), years = Object.keys(reg).map(Number).sort((a, b) => a - b), latest = years[years.length - 1];
+    const fy = +req.fy || latest, has = !!reg[fy];
     switch (req.action) {
-      case 'entries': return json_({ ok: true, fy: CFG.FY, entries: readEntries_() });
-      case 'save': return json_(withLock_(() => saveEntry_(req)));
-      case 'delete': admin(); return json_(withLock_(() => deleteEntry_(req)));
-      case 'alloc': return json_({ ok: true, alloc: readAlloc_() });
-      case 'setAlloc': admin(); return json_(withLock_(() => writeAlloc_(req)));
-      case 'lists': return json_({ ok: true, lists: readLists_() });
-      case 'setLists': admin(); return json_(withLock_(() => writeLists_(req)));
+      case 'years': return json_({ ok: true, years: years.map(y => ({ fy: y, src: url_(reg[y].src), disp: reg[y].disp ? url_(reg[y].disp) : '' })) });
+      case 'entries': return json_({ ok: true, fy, registered: has, entries: has ? readEntries_(fy) : [] });
+      case 'save': need_(has, fy); return json_(withLock_(() => saveEntry_(fy, req)));
+      case 'delete': admin(); need_(has, fy); return json_(withLock_(() => deleteEntry_(fy, req)));
+      case 'alloc': return json_({ ok: true, alloc: has ? readAlloc_(fy) : null });
+      case 'setAlloc': admin(); need_(has, fy); return json_(withLock_(() => writeAlloc_(fy, req)));
+      case 'lists': return json_({ ok: true, lists: readLists_(has ? fy : latest) });
+      case 'setLists': admin(); return json_(withLock_(() => writeLists_(has ? fy : latest, req)));
+      case 'addYear': admin(); return json_(withLock_(() => addYear_(req)));
       case 'airports': return json_({ ok: true, airports: readAirports_(!!req.refresh) });
       default: return json_({ ok: false, error: 'ไม่รู้จักคำสั่ง ' + req.action });
     }
@@ -67,9 +75,26 @@ function doPost(e) {
   }
 }
 
+// ======================= ทะเบียนปีงบ (เก็บใน Script Properties) =======================
+const BOOK_OVERRIDE = {}, BOOKS = {};
+function registry_() {
+  let reg = {}; try { reg = JSON.parse(PropertiesService.getScriptProperties().getProperty('FILES') || '{}'); } catch (e) { reg = {}; }
+  if (!reg[CFG.FY]) reg[CFG.FY] = { src: CFG.SHEET_ID, disp: CFG.DISPLAY_ID };
+  return reg;
+}
+function saveRegistry_(reg) { PropertiesService.getScriptProperties().setProperty('FILES', JSON.stringify(reg)); }
+function book_(fy) {
+  if (BOOK_OVERRIDE[fy]) return BOOK_OVERRIDE[fy];
+  if (BOOKS[fy]) return BOOKS[fy];
+  const r = registry_()[fy]; if (!r) throw httpErr_('nofy', 'ยังไม่ได้เพิ่มปีงบ ' + fy);
+  return (BOOKS[fy] = SpreadsheetApp.openById(r.src));
+}
+function sheet_(fy, name) { const sh = book_(fy).getSheetByName(name); if (!sh) throw httpErr_('setup', 'ไฟล์ปีงบ ' + fy + ' ยังไม่มีชีท “' + name + '”'); return sh; }
+function need_(has, fy) { if (!has) throw httpErr_('nofy', 'ยังไม่ได้เพิ่มปีงบ ' + fy + ' — ADMIN เพิ่มได้ที่ ภาพรวม / สรุปข้อมูล → เพิ่มปีงบใหม่'); }
+
 // ======================= ชีท 3: ภารกิจ =======================
-function readEntries_() {
-  const sh = sheet_(SH.LOG), last = sh.getLastRow();
+function readEntries_(fy) {
+  const sh = sheet_(fy, SH.LOG), last = sh.getLastRow();
   if (last < FIRST) return [];
   const vals = sh.getRange(FIRST, 1, last - FIRST + 1, LOG_COLS.length).getValues();
   return vals.filter(r => r[LOGC.id]).map(rowToEntry_);
@@ -111,11 +136,11 @@ function entryToRow_(e, codes) {
   row[LOGC.airports] = JSON.stringify(e.airports || []);
   return row;
 }
-function saveEntry_(req) {
+function saveEntry_(fy, req) {
   const e = Object.assign({}, req.data || {}); e.ym = req.ym || e.ym;
   if (!/^\d{4}-\d{2}$/.test(e.ym || '')) throw httpErr_('bad', 'เดือนไม่ถูกต้อง');
   const [y, m] = e.ym.split('-').map(Number);
-  if (fyOf_(y, m) !== CFG.FY) throw httpErr_('bad', 'ไฟล์นี้รับเฉพาะปีงบ ' + CFG.FY);
+  if (fyOf_(y, m) !== fy) throw httpErr_('bad', 'เดือน ' + e.ym + ' ไม่อยู่ในปีงบ ' + fy);
   // ข้อ 23: ต้องกรอกครบ ยกเว้นหมายเหตุและข้อความถึง ADMIN
   const miss = [];
   if (!(+e.day >= 1 && +e.day <= 31)) miss.push('วันที่');
@@ -126,18 +151,17 @@ function saveEntry_(req) {
   if (e.cargo == null || e.cargo === '') miss.push('พัสดุ/กก.'); if (!(+e.flights > 0)) miss.push('เที่ยวบิน');
   if (!String(e.recorder || '').trim()) miss.push('ชื่อผู้บันทึกข้อมูล');
   if (miss.length) throw httpErr_('bad', 'กรอกข้อมูลไม่ครบ: ' + miss.join(', '));
-  const codes = readLists_().codes, sh = sheet_(SH.LOG);
+  const codes = readLists_(fy).codes, sh = sheet_(fy, SH.LOG);
   const id = String(req.id || '');
   const at = id ? findRow_(sh, id) : 0;
   if (id && at) {                                   // แก้ไข → บันทึกประวัติทีละช่อง
-    const oldRow = sh.getRange(at, 1, 1, LOG_COLS.length).getValues()[0], old = rowToEntry_(oldRow);
+    const old = rowToEntry_(sh.getRange(at, 1, 1, LOG_COLS.length).getValues()[0]);
     e.id = id; e.recorder = old.recorder || e.recorder; e.at = old.at || e.at;
     e.editedByName = e.editedByName || e.recorder; e.editedAt = new Date().toISOString();
     const newRow = entryToRow_(e, codes);
     sh.getRange(at, 1, 1, newRow.length).setValues([newRow]); formatLogRow_(sh, at);
     const changes = diff_(old, e);
-    const who = e.editedByName || '';
-    changes.forEach(c => history_('แก้ไข', e, c.label, c.before, c.after, who, ''));
+    changes.forEach(c => history_(fy, 'แก้ไข', e, c.label, c.before, c.after, e.editedByName || '', ''));
     return { ok: true, id, changes: changes.length };
   }
   e.id = id || newId_(); e.at = e.at || new Date().toISOString(); e.editedByName = ''; e.editedAt = '';
@@ -145,11 +169,11 @@ function saveEntry_(req) {
   sh.getRange(r, 1, 1, row.length).setValues([row]); formatLogRow_(sh, r);
   return { ok: true, id: e.id };
 }
-function deleteEntry_(req) {
-  const sh = sheet_(SH.LOG), at = findRow_(sh, String(req.id || ''));
+function deleteEntry_(fy, req) {
+  const sh = sheet_(fy, SH.LOG), at = findRow_(sh, String(req.id || ''));
   if (!at) throw httpErr_('notfound', 'ไม่พบรายการ (อาจถูกลบไปแล้ว)');
   const old = rowToEntry_(sh.getRange(at, 1, 1, LOG_COLS.length).getValues()[0]);
-  history_('ลบ', old, '(ทั้งรายการ)', JSON.stringify(old), '', req.byName || '', req.reason || '');
+  history_(fy, 'ลบ', old, '(ทั้งรายการ)', JSON.stringify(old), '', req.byName || '', req.reason || '');
   sh.deleteRow(at);
   return { ok: true };
 }
@@ -161,8 +185,8 @@ function diff_(a, b) {
 }
 
 // ======================= ชีท 2: ประวัติ =======================
-function history_(action, e, field, before, after, who, why) {
-  const sh = sheet_(SH.HIST), r = Math.max(sh.getLastRow() + 1, FIRST);
+function history_(fy, action, e, field, before, after, who, why) {
+  const sh = sheet_(fy, SH.HIST), r = Math.max(sh.getLastRow() + 1, FIRST);
   const [y, m] = String(e.ym || '').split('-').map(Number);
   sh.getRange(r, 1, 1, HIST_COLS.length).setValues([[r - FIRST + 1, new Date(), action, e.id || '', (y && e.day) ? new Date(y, m - 1, +e.day) : '',
     e.aircraft || '', TYPE_TH[e.type] || e.type || '', field, String(before), String(after), who, why]]);
@@ -171,12 +195,12 @@ function history_(action, e, field, before, after, who, why) {
 }
 
 // ======================= ชีท 4: ชั่วโมงจัดสรร =======================
-function readAlloc_() {
-  const sh = sheet_(SH.ALLOC), last = sh.getLastRow();
-  const out = { fy: CFG.FY, groups: {}, updatedByName: '', updatedAt: '' };
+function readAlloc_(fy) {
+  const sh = sheet_(fy, SH.ALLOC), last = sh.getLastRow();
+  const out = { fy, groups: {}, updatedByName: '', updatedAt: '' };
   if (last < FIRST) return out;
   sh.getRange(FIRST, 1, last - FIRST + 1, ALLOC_COLS.length).getValues().forEach(r => {
-    if (+r[0] !== CFG.FY || !r[1]) return;
+    if (+r[0] !== fy || !r[1]) return;
     const g = String(r[1]), kind = r[4] === 'ชม.ฝึกบิน' ? 'training' : 'total';
     const G = out.groups[g] = out.groups[g] || { total: null, training: null, revisions: [] };
     if (r[3] === 'ต้นปี') G[kind] = r[6] === '' ? null : +r[6];
@@ -185,16 +209,15 @@ function readAlloc_() {
   });
   return out;
 }
-function writeAlloc_(req) {
-  if (+req.fy !== CFG.FY) throw httpErr_('bad', 'ไฟล์นี้รับเฉพาะปีงบ ' + CFG.FY);
-  const sh = sheet_(SH.ALLOC), groups = req.groups || {}, who = req.byName || '', now = new Date(), rows = [];
+function writeAlloc_(fy, req) {
+  const sh = sheet_(fy, SH.ALLOC), groups = req.groups || {}, who = req.byName || '', now = new Date(), rows = [];
   ['15', '18', '19'].concat(Object.keys(groups).filter(k => !['15', '18', '19'].includes(k))).forEach(g => {
     const G = groups[g]; if (!G) return;
-    rows.push([CFG.FY, g, GROUP_NAME[g] || g, 'ต้นปี', 'ชม.บินรวม', '', G.total == null ? '' : +G.total, who, now, '']);
-    rows.push([CFG.FY, g, GROUP_NAME[g] || g, 'ต้นปี', 'ชม.ฝึกบิน', '', G.training == null ? '' : +G.training, who, now, '']);
-    (G.revisions || []).forEach(rv => rows.push([CFG.FY, g, GROUP_NAME[g] || g, 'Revise', rv.kind === 'training' ? 'ชม.ฝึกบิน' : 'ชม.บินรวม', +rv.month, +rv.add, who, now, '']));
+    rows.push([fy, g, GROUP_NAME[g] || g, 'ต้นปี', 'ชม.บินรวม', '', G.total == null ? '' : +G.total, who, now, '']);
+    rows.push([fy, g, GROUP_NAME[g] || g, 'ต้นปี', 'ชม.ฝึกบิน', '', G.training == null ? '' : +G.training, who, now, '']);
+    (G.revisions || []).forEach(rv => rows.push([fy, g, GROUP_NAME[g] || g, 'Revise', rv.kind === 'training' ? 'ชม.ฝึกบิน' : 'ชม.บินรวม', +rv.month, +rv.add, who, now, '']));
   });
-  const before = JSON.stringify(readAlloc_().groups);
+  const before = JSON.stringify(readAlloc_(fy).groups);
   const last = sh.getLastRow();
   if (last >= FIRST) sh.getRange(FIRST, 1, last - FIRST + 1, ALLOC_COLS.length).clearContent();
   if (rows.length) {
@@ -202,13 +225,13 @@ function writeAlloc_(req) {
     sh.getRange(FIRST, 7, rows.length, 1).setNumberFormat('#,##0.00'); sh.getRange(FIRST, 9, rows.length, 1).setNumberFormat('d mmm yy hh:mm');
     sh.getRange(FIRST, 1, rows.length, ALLOC_COLS.length).setFontFamily('TH SarabunPSK').setFontSize(16).setVerticalAlignment('middle');
   }
-  history_('แก้ชั่วโมงจัดสรร', { id: 'ปีงบ ' + CFG.FY }, 'ชั่วโมงจัดสรร', before, JSON.stringify(groups), who, '');
+  history_(fy, 'แก้ชั่วโมงจัดสรร', { id: 'ปีงบ ' + fy }, 'ชั่วโมงจัดสรร', before, JSON.stringify(groups), who, '');
   return { ok: true, rows: rows.length };
 }
 
 // ======================= ชีท 5: เครื่อง / รหัส / ภารกิจ =======================
-function readLists_() {
-  const sh = sheet_(SH.LISTS), last = Math.max(sh.getLastRow(), FIRST);
+function readLists_(fy) {
+  const sh = sheet_(fy, SH.LISTS), last = Math.max(sh.getLastRow(), FIRST);
   const v = sh.getRange(FIRST, 1, last - FIRST + 1, 11).getValues();
   const aircraft = [], codes = {}, mission = [], route = [];
   v.forEach(r => {
@@ -218,20 +241,19 @@ function readLists_() {
   });
   return { aircraft, codes, mission, route };
 }
-function writeLists_(req) {
-  const L = req.lists || {}, sh = sheet_(SH.LISTS), last = sh.getLastRow();
-  const old = readLists_();
+function writeLists_(fy, req) {
+  const L = req.lists || {}, sh = sheet_(fy, SH.LISTS), last = sh.getLastRow();
+  const old = readLists_(fy);
   if (last >= FIRST) sh.getRange(FIRST, 1, last - FIRST + 1, 11).clearContent();
-  const ac = (L.aircraft || []).slice(), codes = L.codes || {};
-  // เครื่องที่ถูกเอาออกจากรายการ: เก็บไว้เป็น "ไม่" ใช้งาน (ข้อมูลเก่ายังอ้างถึง)
-  Object.keys(old.codes).forEach(a => { if (!ac.includes(a)) ac.push('\u0000' + a); });
-  const acRows = ac.map((a, i) => { const off = a[0] === '\u0000', name = off ? a.slice(1) : a, code = codes[name] || old.codes[name] || '';
-    return [i + 1, name, code, CODE_GROUP[code] || '', off ? 'ไม่' : 'ใช่']; });
+  const codes = L.codes || {}, active = (L.aircraft || []).slice();
+  const retired = Object.keys(old.codes).filter(a => !active.includes(a));   // เครื่องที่เอาออก: เก็บไว้ “ไม่” ใช้งาน
+  const acRows = active.map(a => [a, codes[a] || old.codes[a] || '', 'ใช่']).concat(retired.map(a => [a, old.codes[a] || '', 'ไม่']))
+    .map((r, i) => [i + 1, r[0], r[1], CODE_GROUP[r[1]] || '', r[2]]);
   if (acRows.length) sh.getRange(FIRST, 1, acRows.length, 5).setValues(acRows);
   const ms = (L.mission || []).map((m, i) => [i + 1, m]); if (ms.length) sh.getRange(FIRST, 7, ms.length, 2).setValues(ms);
   const rt = (L.route || []).map((m, i) => [i + 1, m]); if (rt.length) sh.getRange(FIRST, 10, rt.length, 2).setValues(rt);
   sh.getRange(FIRST, 1, Math.max(acRows.length, ms.length, rt.length, 1), 11).setFontFamily('TH SarabunPSK').setFontSize(16);
-  history_('แก้รายการตัวเลือก', { id: 'ชีท 5' }, 'เครื่อง/รหัส/ภารกิจ', JSON.stringify(old), JSON.stringify(L), req.byName || '', '');
+  history_(fy, 'แก้รายการตัวเลือก', { id: 'ชีท 5' }, 'เครื่อง/รหัส/ภารกิจ', JSON.stringify(old), JSON.stringify(L), req.byName || '', '');
   return { ok: true };
 }
 
@@ -256,24 +278,77 @@ function readAirports_(refresh) {
   return out;
 }
 
-// ======================= สำรองรายวัน =======================
+// ======================= สำรองรายวัน (ทุกปีงบ) =======================
 function dailyBackup() {
-  const file = DriveApp.getFileById(CFG.SHEET_ID), folder = DriveApp.getFolderById(CFG.BACKUP_FOLDER_ID);
-  const stamp = Utilities.formatDate(new Date(), CFG.TZ, 'yyyy-MM-dd HHmm');
-  const prefix = file.getName() + '_สำรอง ';
-  file.makeCopy(prefix + stamp, folder);
-  const cutoff = Date.now() - CFG.BACKUP_KEEP_DAYS * 864e5, it = folder.getFiles();
-  while (it.hasNext()) { const f = it.next(); if (f.getName().indexOf(prefix) === 0 && f.getDateCreated().getTime() < cutoff) f.setTrashed(true); }
+  const folder = DriveApp.getFolderById(CFG.BACKUP_FOLDER_ID), reg = registry_();
+  const stamp = Utilities.formatDate(new Date(), CFG.TZ, 'yyyy-MM-dd HHmm'), cutoff = Date.now() - CFG.BACKUP_KEEP_DAYS * 864e5;
+  Object.keys(reg).forEach(fy => {
+    try {
+      const file = DriveApp.getFileById(reg[fy].src), prefix = file.getName() + '_สำรอง ';
+      file.makeCopy(prefix + stamp, folder);
+      const it = folder.getFiles();
+      while (it.hasNext()) { const f = it.next(); if (f.getName().indexOf(prefix) === 0 && f.getDateCreated().getTime() < cutoff) f.setTrashed(true); }
+    } catch (e) { console.error('สำรองปีงบ ' + fy + ' ไม่สำเร็จ: ' + e); }
+  });
 }
 function installBackupTrigger_() {
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'dailyBackup').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('dailyBackup').timeBased().everyDays(1).atHour(CFG.BACKUP_HOUR).inTimezone(CFG.TZ).create();
 }
 
-// ======================= ติดตั้งครั้งแรก =======================
-/** เรียกครั้งเดียวจากหน้า Apps Script: สร้างชีท 2–6, ใส่ข้อมูลปัจจุบัน (ถ้าชีทยังว่าง), ตั้งสำรองรายวัน */
+// ======================= ติดตั้งครั้งแรก / เพิ่มปีงบ =======================
+/** เรียกครั้งเดียวจากหน้า Apps Script: ตั้งปีงบ 70, ใส่ข้อมูลปัจจุบัน, ตั้งไฟล์แสดงผล, ตั้งสำรองรายวัน */
 function setup() {
-  const ss = book_();
+  const reg = registry_(); saveRegistry_(reg);
+  const r70 = reg[CFG.FY];
+  const n = setupBook_(SpreadsheetApp.openById(r70.src), CFG.FY, SEED.entries, SEED.alloc[String(CFG.FY)] || {}, SEED.lists, 'ค่าเริ่มต้นปีงบ 70');
+  let disp;
+  try { setupDisplay_(r70.disp, r70.src, CFG.FY); disp = 'ตั้งไฟล์แสดงผลแล้ว'; }
+  catch (e) { disp = 'ตั้งไฟล์แสดงผลไม่ได้ (' + e.message + ') — ไฟล์แสดงผลมีสูตรอยู่แล้ว ข้ามได้'; }
+  installBackupTrigger_();
+  readAirports_(true);
+  const msg = 'ติดตั้งเสร็จ: ปีงบ ' + CFG.FY + ' มี ' + n + ' รายการภารกิจ · ' + disp;
+  console.log(msg);
+  return msg;
+}
+
+/** เพิ่มปีงบใหม่จากหน้าเว็บ: ลิงก์ไฟล์ต้นทาง + ลิงก์ไฟล์แสดงผล + รหัส ADMIN (ไม่ต้องแก้โค้ด) */
+function addYear_(req) {
+  const fy = +req.fy, reg = registry_();
+  if (!(fy >= 2560 && fy <= 2700)) throw httpErr_('bad', 'ปีงบไม่ถูกต้อง (เช่น 2571)');
+  const src = fileId_(req.srcUrl), disp = req.dispUrl ? fileId_(req.dispUrl) : '';
+  if (!src) throw httpErr_('bad', 'ลิงก์ไฟล์ต้นทางไม่ถูกต้อง');
+  if (req.dispUrl && !disp) throw httpErr_('bad', 'ลิงก์ไฟล์แสดงผลไม่ถูกต้อง');
+  if (disp && disp === src) throw httpErr_('bad', 'ไฟล์ต้นทางกับไฟล์แสดงผลต้องเป็นคนละไฟล์');
+  Object.keys(reg).forEach(y => {
+    if (+y === fy) return;
+    if ([reg[y].src, reg[y].disp].includes(src)) throw httpErr_('bad', 'ไฟล์ต้นทางนี้ใช้กับปีงบ ' + y + ' อยู่แล้ว');
+    if (disp && [reg[y].src, reg[y].disp].includes(disp)) throw httpErr_('bad', 'ไฟล์แสดงผลนี้ใช้กับปีงบ ' + y + ' อยู่แล้ว');
+  });
+  if (reg[fy] && reg[fy].src !== src) throw httpErr_('bad', 'ปีงบ ' + fy + ' มีไฟล์ต้นทางอยู่แล้ว');
+  let ss;
+  try { ss = SpreadsheetApp.openById(src); ss.getName(); }
+  catch (e) { throw httpErr_('access', 'เปิดไฟล์ต้นทางไม่ได้ — สร้างไฟล์ในบัญชี ohomee.aviation หรือแชร์สิทธิ์ผู้แก้ไข (Editor) ให้บัญชีนี้ก่อน'); }
+  const log = ss.getSheetByName(SH.LOG);
+  if (log && log.getLastRow() >= FIRST) {
+    const fys = log.getRange(FIRST, LOGC.fy + 1, log.getLastRow() - FIRST + 1, 1).getValues().map(r => +r[0]).filter(Boolean);
+    if (fys.some(y => y !== fy)) throw httpErr_('bad', 'ไฟล์นี้มีข้อมูลของปีงบอื่นอยู่ ใช้ไฟล์ใหม่ที่ว่าง');
+  }
+  const prevYears = Object.keys(reg).map(Number).filter(y => y !== fy).sort((a, b) => a - b), prev = prevYears[prevYears.length - 1];
+  const lists = prev ? readLists_(prev) : SEED.lists;        // รายชื่อเครื่อง / รหัส / ภารกิจ ใช้ต่อจากปีก่อน
+  setupBook_(ss, fy, [], null, lists, req.byName || 'ADMIN');
+  reg[fy] = { src, disp }; saveRegistry_(reg);
+  let display = 'ไม่ได้ใส่ลิงก์ไฟล์แสดงผล';
+  if (disp) {
+    try { setupDisplay_(disp, src, fy); display = 'ตั้งไฟล์แสดงผลแล้ว — เปิดไฟล์แสดงผลแล้วกด “อนุญาตการเข้าถึง” ที่ช่อง A1 ของแต่ละแท็บ (ครั้งเดียว)'; }
+    catch (e) { display = 'เขียนไฟล์แสดงผลไม่ได้ — แชร์สิทธิ์ผู้แก้ไข (Editor) ให้ ohomee.aviation@gmail.com แล้วกดเพิ่มปีงบนี้ซ้ำ'; }
+  }
+  history_(fy, 'เพิ่มปีงบ', { id: 'ปีงบ ' + fy }, 'ไฟล์ต้นทาง / แสดงผล', '', url_(src) + (disp ? ' · ' + url_(disp) : ''), req.byName || '', '');
+  return { ok: true, fy, name: ss.getName(), display };
+}
+
+/** สร้างชีท 2–6 ในไฟล์ต้นทางของปีงบ fy และใส่ข้อมูลตั้งต้น (เฉพาะชีทที่ยังว่าง) */
+function setupBook_(ss, fy, entries, alloc0, lists0, byName) {
   ss.setSpreadsheetTimeZone(CFG.TZ);
   const mk = (name, title, sub, heads, widths) => {
     let sh = ss.getSheetByName(name); const fresh = !sh;
@@ -289,46 +364,73 @@ function setup() {
     }
     return sh;
   };
-  const hist = mk(SH.HIST, 'ชีทที่ 2 · ประวัติการแก้ไขและการลบ', 'เว็บเขียนให้อัตโนมัติ · 1 แถว = 1 ช่องที่เปลี่ยน · การลบเก็บข้อมูลทั้งรายการไว้ในช่อง “ค่าก่อน” เพื่อกู้คืน · ห้ามแก้หรือลบแถวด้วยมือ',
+  mk(SH.HIST, 'ชีทที่ 2 · ประวัติการแก้ไขและการลบ', 'เว็บเขียนให้อัตโนมัติ · 1 แถว = 1 ช่องที่เปลี่ยน · การลบเก็บข้อมูลทั้งรายการไว้ในช่อง “ค่าก่อน” เพื่อกู้คืน · ห้ามแก้หรือลบแถวด้วยมือ',
     HIST_COLS, [7, 17, 14, 13, 12, 18, 12, 16, 40, 40, 24, 24]);
-  const log = mk(SH.LOG, 'ชีทที่ 3 · 602YEAR_LOG BOOK ปีงบ ' + CFG.FY, '1 แถว = 1 ภารกิจ · เว็บเพิ่ม/แก้/ลบแถวให้ (จับคู่ด้วยรหัสรายการ) · ห้ามแก้ด้วยมือ · แบบฟอร์มรายเดือนและสรุปได้จากปุ่ม Export บนเว็บ',
+  const log = mk(SH.LOG, 'ชีทที่ 3 · 602YEAR_LOG BOOK ปีงบ ' + fy, '1 แถว = 1 ภารกิจ · เว็บเพิ่ม/แก้/ลบแถวให้ (จับคู่ด้วยรหัสรายการ) · ห้ามแก้ด้วยมือ · แบบฟอร์มรายเดือนและสรุปได้จากปุ่ม Export บนเว็บ',
     LOG_COLS.map(c => c[1]), LOG_COLS.map(c => c[2]));
   log.hideColumns(LOGC.airports + 1);
   log.getRange('C:C').setNumberFormat('@');
-  const alloc = mk(SH.ALLOC, 'ชีทที่ 4 · ชั่วโมงจัดสรรต้นปีและ Revise (ADMIN DATA USING)', 'เว็บเขียนเมื่อกด “บันทึกชั่วโมงจัดสรร” · 1 แถว = ยอดต้นปี หรือ Revise 1 ครั้ง · Revise ลดชั่วโมงใส่ค่าลบ · ตารางสีเขียวขวามือเป็นสูตรตรวจดู เว็บไม่อ่าน',
+  const alloc = mk(SH.ALLOC, 'ชีทที่ 4 · ชั่วโมงจัดสรรต้นปีและ Revise ปีงบ ' + fy + ' (ADMIN DATA USING)', 'เว็บเขียนเมื่อกด “บันทึกชั่วโมงจัดสรร” · 1 แถว = ยอดต้นปี หรือ Revise 1 ครั้ง · Revise ลดชั่วโมงใส่ค่าลบ · ตารางสีเขียวขวามือเป็นสูตรตรวจดู เว็บไม่อ่าน',
     ALLOC_COLS, [8, 7, 30, 11, 13, 15, 18, 26, 17, 22]);
   alloc.getRange('L4:O4').setValues([['กลุ่ม', 'ชม.บินรวม\nทั้งปีหลัง Revise', 'ชม.ฝึกบิน\nทั้งปีหลัง Revise', 'ชม.ภารกิจ\n(รวม − ฝึก)']])
     .setFontFamily('TH SarabunPSK').setFontWeight('bold').setBackground('#E2EFDA').setWrap(true).setHorizontalAlignment('center');
+  alloc.getRange('L5:L7').setNumberFormat('@'); alloc.getRange('B:B').setNumberFormat('@');
   ['15', '18', '19'].forEach((g, i) => { const r = 5 + i;
     alloc.getRange(r, 12, 1, 4).setValues([[g, `=SUMIFS($G$5:$G$2000,$B$5:$B$2000,L${r},$E$5:$E$2000,"ชม.บินรวม")`, `=SUMIFS($G$5:$G$2000,$B$5:$B$2000,L${r},$E$5:$E$2000,"ชม.ฝึกบิน")`, `=M${r}-N${r}`]])
       .setBackground('#E2EFDA').setFontFamily('TH SarabunPSK').setFontSize(16).setNumberFormat('#,##0.00'); });
-  alloc.getRange('L5:L7').setNumberFormat('@'); alloc.getRange('B:B').setNumberFormat('@');
   const lists = mk(SH.LISTS, 'ชีทที่ 5 · รายชื่อเครื่อง รหัส บ.ล. และรายชื่อภารกิจที่ใช้บ่อย', 'เว็บอ่านเมื่อเปิดหน้า และเขียนเมื่อ ADMIN บันทึกในหน้าตั้งค่า · เครื่องที่ปลดประจำการเปลี่ยน “ใช้งาน” เป็น ไม่ — อย่าลบแถว',
     ['ลำดับ', 'แบบ บ.\n(ชื่อที่แสดงในเว็บ)', 'รหัส บ.ล.', 'กลุ่มชั่วโมง\nจัดสรร', 'ใช้งาน', '', 'ลำดับ', 'ภารกิจที่ใช้บ่อย', '', 'ลำดับ', 'สนามบินเพิ่มเติม (ADMIN ยืนยันแล้ว)'], [7, 22, 11, 12, 9, 3, 7, 52, 3, 7, 34]);
   lists.getRange('F4').setBackground(null); lists.getRange('I4').setBackground(null); lists.getRange('D:D').setNumberFormat('@');
-  readmeSheet_(ss);
+  readmeSheet_(ss, fy);
 
-  // ใส่ข้อมูลปัจจุบัน (เฉพาะชีทที่ยังว่าง)
-  if (log.getLastRow() < FIRST) {
-    const codes = SEED.lists.codes;
-    const rows = SEED.entries.slice().sort((a, b) => (a.ym + String(a.day).padStart(2, '0')).localeCompare(b.ym + String(b.day).padStart(2, '0'))).map(e => entryToRow_(e, codes));
+  if (log.getLastRow() < FIRST && entries && entries.length) {
+    const codes = (lists0 || {}).codes || {};
+    const rows = entries.slice().sort((a, b) => (a.ym + String(a.day).padStart(2, '0')).localeCompare(b.ym + String(b.day).padStart(2, '0'))).map(e => entryToRow_(e, codes));
     log.getRange(FIRST, 1, rows.length, LOG_COLS.length).setValues(rows);
     for (let r = FIRST; r < FIRST + rows.length; r++) formatLogRow_(log, r);
   }
-  if (alloc.getLastRow() < FIRST || !alloc.getRange(FIRST, 1).getValue()) writeAlloc_({ fy: CFG.FY, groups: SEED.alloc[String(CFG.FY)] || {}, byName: 'ค่าเริ่มต้นปีงบ 70' });
-  if (lists.getLastRow() < FIRST || !lists.getRange(FIRST, 2).getValue()) writeLists_({ lists: SEED.lists, byName: 'ค่าเริ่มต้น' });
-  const s1 = ss.getSheetByName('Sheet1') || ss.getSheetByName('ชีต1');
+  BOOK_OVERRIDE[fy] = ss;            // ใช้ไฟล์นี้ตรง ๆ ระหว่างตั้งค่า (ก่อนลงทะเบียนปีงบ)
+  try {
+    if (alloc0 && (alloc.getLastRow() < FIRST || !alloc.getRange(FIRST, 1).getValue())) writeAlloc_(fy, { groups: alloc0, byName });
+    if (lists.getLastRow() < FIRST || !lists.getRange(FIRST, 2).getValue()) writeLists_(fy, { lists: lists0 || {}, byName });
+  } finally { delete BOOK_OVERRIDE[fy]; }
+  const s1 = ss.getSheetByName('Sheet1') || ss.getSheetByName('ชีต1') || ss.getSheetByName('แผ่นงาน1');
   if (s1 && s1.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(s1);
   [SH.README, SH.HIST, SH.LOG, SH.ALLOC, SH.LISTS].forEach((n, i) => { ss.setActiveSheet(ss.getSheetByName(n)); ss.moveActiveSheet(i + 1); });
   ss.setActiveSheet(ss.getSheetByName(SH.LOG));
-  installBackupTrigger_();
-  readAirports_(true);
-  return 'ติดตั้งเสร็จ: ' + (log.getLastRow() - FIRST + 1) + ' รายการภารกิจ';
+  return Math.max(0, log.getLastRow() - FIRST + 1);
 }
-function readmeSheet_(ss) {
+
+/** ไฟล์แสดงผล: แท็บ 2–5 ดึงจากไฟล์ต้นทางด้วย IMPORTRANGE (ไฟล์ต้องแชร์สิทธิ์ผู้แก้ไขให้บัญชีสคริปต์) */
+function setupDisplay_(dispId, srcId, fy) {
+  if (!dispId) throw new Error('ไม่มีไฟล์แสดงผล');
+  const ds = SpreadsheetApp.openById(dispId);
+  const tabs = [[SH.LOG, 'A1:V'], [SH.HIST, 'A1:L'], [SH.ALLOC, 'A1:O'], [SH.LISTS, 'A1:K']];
+  let note = ds.getSheetByName('อ่านก่อน');
+  if (!note) {
+    const first = ds.getSheets()[0];
+    if (first && first.getLastRow() === 0 && !tabs.some(t => t[0] === first.getName())) { note = first; note.setName('อ่านก่อน'); }
+    else note = ds.insertSheet('อ่านก่อน', 0);
+  }
+  note.getRange(1, 1, 5, 2).setValues([
+    ['602DB_LOG BOOK ปีงบ' + String(fy).slice(-2) + '_แสดงผล', ''],
+    ['ไฟล์นี้ใช้ดูอย่างเดียว', 'ทุกแท็บดึงข้อมูลจากไฟล์ต้นทางด้วย IMPORTRANGE · แก้ที่นี่ไม่มีผลกับข้อมูลจริง · ต้องการแก้ให้แก้ผ่านหน้าเว็บ'],
+    ['ครั้งแรกที่เปิด', 'แต่ละแท็บจะขึ้น #REF! ให้คลิกที่ช่อง A1 แล้วกด “อนุญาตการเข้าถึง” (Allow access) ทำครั้งเดียวต่อแท็บ'],
+    ['ไฟล์ต้นทาง', url_(srcId)],
+    ['ข้อมูลอัปเดต', 'IMPORTRANGE อัปเดตเองภายในไม่กี่นาทีหลังมีการบันทึก'],
+  ]).setFontFamily('TH SarabunPSK').setFontSize(16).setWrap(true);
+  note.getRange(1, 1).setFontSize(20).setFontWeight('bold'); note.setColumnWidth(1, 200); note.setColumnWidth(2, 760);
+  tabs.forEach(([name, rng], i) => {
+    const sh = ds.getSheetByName(name) || ds.insertSheet(name, i + 1);
+    sh.getRange(1, 1).setFormula('=IMPORTRANGE("' + srcId + '","\'' + name + '\'!' + rng + '")');
+  });
+  ds.setSpreadsheetTimeZone(CFG.TZ);
+}
+
+function readmeSheet_(ss, fy) {
   let sh = ss.getSheetByName(SH.README); if (!sh) sh = ss.insertSheet(SH.README); else sh.clear();
   const rows = [
-    ['ชีทที่ 6 · คำอธิบาย วิธีกู้ข้อมูล และคำเตือน', ''], ['', ''],
+    ['ชีทที่ 6 · คำอธิบาย วิธีกู้ข้อมูล และคำเตือน · ปีงบ ' + fy, ''], ['', ''],
     ['⚠ คำเตือน', ''],
     ['ห้ามแก้ด้วยมือ', 'ชีท 2–5 เว็บเป็นผู้เขียน · ห้ามพิมพ์ ลบแถว แทรกแถว เรียงลำดับ เปลี่ยนชื่อชีท หรือย้ายคอลัมน์ · ต้องแก้ให้แก้ผ่านหน้าเว็บ (มีบันทึกในชีท 2)'],
     ['ดูข้อมูล', 'ใช้ไฟล์ “แสดงผล” (ดึงด้วย IMPORTRANGE) หรือ Filter view ในไฟล์นี้ ไม่กระทบข้อมูล'],
@@ -352,8 +454,6 @@ function readmeSheet_(ss) {
 }
 
 // ======================= ตัวช่วย =======================
-function book_() { try { return SpreadsheetApp.openById(CFG.SHEET_ID); } catch (e) { return SpreadsheetApp.getActive(); } }
-function sheet_(name) { const sh = book_().getSheetByName(name); if (!sh) throw httpErr_('setup', 'ยังไม่ได้ติดตั้งชีท “' + name + '” — เรียก setup() ก่อน'); return sh; }
 function findRow_(sh, id) {
   if (!id) return 0; const last = sh.getLastRow(); if (last < FIRST) return 0;
   const ids = sh.getRange(FIRST, 1, last - FIRST + 1, 1).getValues();
@@ -361,12 +461,13 @@ function findRow_(sh, id) {
   return 0;
 }
 function formatLogRow_(sh, r) {
-  const rg = sh.getRange(r, 1, 1, LOG_COLS.length);
-  rg.setFontFamily('TH SarabunPSK').setFontSize(16).setVerticalAlignment('middle').setWrap(true);
+  sh.getRange(r, 1, 1, LOG_COLS.length).setFontFamily('TH SarabunPSK').setFontSize(16).setVerticalAlignment('middle').setWrap(true);
   sh.getRange(r, LOGC.date + 1).setNumberFormat('d mmm yy');
   sh.getRange(r, LOGC.hours + 1).setNumberFormat('0.0');
   sh.getRange(r, LOGC.at + 1).setNumberFormat('d mmm yy hh:mm'); sh.getRange(r, LOGC.editedAt + 1).setNumberFormat('d mmm yy hh:mm');
 }
+function fileId_(u) { const s = String(u || '').trim(); const m = /\/d\/([a-zA-Z0-9_-]{20,})/.exec(s) || /^([a-zA-Z0-9_-]{25,})$/.exec(s); return m ? m[1] : ''; }
+function url_(id) { return 'https://docs.google.com/spreadsheets/d/' + id; }
 function newId_() { return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function fyOf_(y, m) { return m >= 10 ? y + 544 : y + 543; }
 function nz_(v) { return (v === null || v === undefined || v === '') ? '' : +v; }

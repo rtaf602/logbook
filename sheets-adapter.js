@@ -6,10 +6,9 @@
 (function () {
   "use strict";
   const CFG = window.LOGBOOK_CONFIG || {};
-  const APIS = {};
-  Object.entries(CFG.API || {}).forEach(([fy, url]) => { if (/^https:\/\/script\.google(usercontent)?\.com\//.test(url || "")) APIS[+fy] = url; });
-  const FYS = Object.keys(APIS).map(Number).sort((a, b) => a - b);
-  const LATEST = FYS[FYS.length - 1];
+  // ลิงก์ Web app เดียวใช้ได้ทุกปีงบ (ปีงบใหม่เพิ่มจากหน้าเว็บ ไม่ต้องแก้ไฟล์นี้)
+  const RAW = typeof CFG.API === "string" ? CFG.API : Object.values(CFG.API || {}).slice(-1)[0];
+  const API = /^https:\/\/script\.google(usercontent)?\.com\//.test(RAW || "") ? RAW : "";
   const POLL = Math.max(10, +CFG.POLL_SECONDS || 30) * 1000;
   window.LOGBOOK_STANDALONE = true;
 
@@ -21,12 +20,11 @@
   window.addEventListener("logbook:unlocked", () => unlock());
 
   async function call(fy, action, payload) {
-    const url = APIS[fy];
-    if (!url) throw fail("ยังไม่ได้ตั้งค่าฐานข้อมูลของปีงบ " + fy + " (config.js)", "unavailable");
+    if (!API) throw fail("ยังไม่ได้ตั้งค่าฐานข้อมูล (config.js)", "unavailable");
     await unlocked;
-    const body = JSON.stringify(Object.assign({ action, key: window.__entryPass || "", admin: window.__adminPass || "" }, payload || {}));
+    const body = JSON.stringify(Object.assign({ action, fy: fy || undefined, key: window.__entryPass || "", admin: window.__adminPass || "" }, payload || {}));
     let res;
-    try { res = await fetch(url, { method: "POST", body, redirect: "follow" }); }
+    try { res = await fetch(API, { method: "POST", body, redirect: "follow" }); }
     catch (e) { throw fail("เชื่อมต่อฐานข้อมูลไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่", "network"); }
     let j; try { j = await res.json(); } catch (e) { throw fail("ฐานข้อมูลตอบกลับไม่ถูกต้อง (ตรวจการ Deploy Web app)", "bad_response"); }
     if (!j.ok) throw fail(j.error || "เกิดข้อผิดพลาด", j.code);
@@ -39,7 +37,6 @@
   function emitFy(fy) { fyState(fy).subs.forEach(s => { try { s.fire(); } catch (e) { } }); }
   function refreshFy(fy) {
     const s = fyState(fy);
-    if (!APIS[fy]) { s.loaded = true; s.byYm = {}; emitFy(fy); return Promise.resolve(); }
     if (s.busy) return s.busy;
     s.busy = call(fy, "entries").then(j => {
       const by = {}; (j.entries || []).forEach(e => { (by[e.ym] = by[e.ym] || []).push(e); });
@@ -53,10 +50,10 @@
   const DOCS = {};
   function docState(path) { return DOCS[path] || (DOCS[path] = { subs: new Set(), value: undefined, busy: null }); }
   async function loadDoc(path) {
-    if (path === "config/airports") { const j = await call(LATEST, "airports"); return j.airports; }
-    if (path === "config/lists") { const j = await call(LATEST, "lists"); return j.lists; }
+    if (path === "config/airports") { const j = await call(0, "airports"); return j.airports; }
+    if (path === "config/lists") { const j = await call(0, "lists"); return j.lists; }
     const m = /^adminalloc\/fy(\d+)$/.exec(path);
-    if (m) { const fy = +m[1]; if (!APIS[fy]) return null; const j = await call(fy, "alloc"); const a = j.alloc;
+    if (m) { const fy = +m[1]; const j = await call(fy, "alloc"); const a = j.alloc;
       return a && a.groups && Object.keys(a.groups).length ? a : null; }
     return null;
   }
@@ -113,7 +110,7 @@
           const a = /^adminalloc\/fy(\d+)$/.exec(path);
           if (a) await call(+a[1], "setAlloc", { fy: +a[1], groups: obj.groups || {}, byName: obj.updatedByName || "" });
           else if (path === "config/lists") { const L = Object.assign({}, obj); const by = L.updatedByName || ""; delete L.updatedByName;
-            await call(LATEST, "setLists", { lists: L, byName: by }); }
+            await call(0, "setLists", { lists: L, byName: by }); }
           else throw fail("ไม่รองรับการบันทึก " + path);
           await refreshDoc(path);
         },
@@ -141,5 +138,11 @@
     },
   };
 
-  window.claude = { use: async name => name === "db" ? (FYS.length ? db : null) : name === "downloads" ? downloads : null };
+  // งาน ADMIN: รายการปีงบ / เพิ่มปีงบใหม่
+  window.LOGBOOK_ADMIN = API ? {
+    async years() { return (await call(0, "years")).years; },
+    async addYear(o) { const j = await call(0, "addYear", o); return j; },
+  } : null;
+
+  window.claude = { use: async name => name === "db" ? (API ? db : null) : name === "downloads" ? downloads : null };
 })();

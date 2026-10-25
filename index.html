@@ -497,6 +497,21 @@ details.settings summary{cursor:pointer;font-family:var(--f-display);font-weight
     <div class="msg" id="listMsg" role="status"></div>
   </details>
 
+  <details class="panel settings" id="addYearBox" hidden>
+    <summary>เพิ่มปีงบใหม่ (ADMIN)</summary>
+    <p class="muted" style="margin:0">สร้าง Google Sheet เปล่า 2 ไฟล์ แล้ววางลิงก์ด้านล่าง ไม่ต้องแก้โค้ด<br>
+      · <b>ต้นทาง</b> เช่น 602DB_LOG BOOK ปีงบ71_ต้นทาง — สร้างในบัญชี ohomee.aviation@gmail.com (หรือแชร์สิทธิ์ผู้แก้ไขให้บัญชีนี้)<br>
+      · <b>แสดงผล</b> เช่น 602DB_LOG BOOK ปีงบ71_แสดงผล — แชร์สิทธิ์ผู้แก้ไข (Editor) ให้ ohomee.aviation@gmail.com</p>
+    <div id="yearList" class="muted" style="margin:6px 0"></div>
+    <div class="lists">
+      <label class="f">ปีงบ<input id="nyFy" type="number" min="2560" max="2700" inputmode="numeric" placeholder="เช่น 2571"></label>
+      <label class="f">ลิงก์ไฟล์ต้นทาง<input id="nySrc" placeholder="https://docs.google.com/spreadsheets/d/..."></label>
+      <label class="f">ลิงก์ไฟล์แสดงผล<input id="nyDisp" placeholder="https://docs.google.com/spreadsheets/d/..."></label>
+    </div>
+    <div class="row-actions"><button class="btn navy" id="nyBtn" type="button">เพิ่มปีงบ</button></div>
+    <div class="msg" id="nyMsg" role="status"></div>
+  </details>
+
   <p class="foot">ข้อมูลเก็บแยกตามเดือน · ทุกคนที่เปิดหน้านี้เห็นข้อมูลชุดเดียวกันแบบเรียลไทม์ · ไฟล์ Excel ที่ Export ใช้รูปแบบเดียวกับแบบฟอร์มเดิม (แท็บภารกิจเดโชชัย / บุคคลสำคัญ / ฝึกบิน) และมีแท็บ “รายการทั้งหมด” พร้อมชื่อผู้บันทึกต่อท้าย</p>
 </div>
 
@@ -1211,6 +1226,7 @@ function setView(v){
   $("views").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.view===v));
   $("formPanel").hidden = v!=="entry";
   $("reportPanel").hidden = v!=="report"; $("settings").hidden = v!=="report";
+  if($("addYearBox")) $("addYearBox").hidden = v!=="report" || !window.LOGBOOK_ADMIN;
   $("adminPanel").hidden = v!=="admin"; $("months").hidden = v==="admin";
   paintMonths();
   if(v==="admin" && typeof adEnsure==="function") adEnsure();
@@ -1988,6 +2004,34 @@ async function adExport(whole){
 $("adExpRange").onclick = () => adExport(false);
 $("adExpYear").onclick = () => adExport(true);
 
+// ---------- เพิ่มปีงบใหม่ (เฉพาะเว็บที่ต่อ Google Sheets) ----------
+async function showYears(){
+  if(!window.LOGBOOK_ADMIN) return;
+  try{ const ys = await window.LOGBOOK_ADMIN.years();
+    $("yearList").innerHTML = "ปีงบที่มีแล้ว: " + ys.map(y => `<b>${y.fy}</b> (<a href="${esc(y.src)}" target="_blank" rel="noopener">ต้นทาง</a>${y.disp?` · <a href="${esc(y.disp)}" target="_blank" rel="noopener">แสดงผล</a>`:""})`).join(" · ");
+    const next = Math.max(...ys.map(y=>y.fy)) + 1; if(!$("nyFy").value) $("nyFy").value = next;
+    ys.forEach(y => { if(![...fySel.options].some(o=>+o.value===y.fy)) fySel.insertAdjacentHTML("beforeend", `<option value="${y.fy}">${y.fy}</option>`); });
+  }catch(err){ $("yearList").textContent = "โหลดรายการปีงบไม่ได้: " + errText(err); }
+}
+if($("addYearBox")){
+  $("addYearBox").addEventListener("toggle", () => { if($("addYearBox").open) showYears(); });
+  $("nyBtn").onclick = async () => {
+    const fy = +$("nyFy").value, src = $("nySrc").value.trim(), disp = $("nyDisp").value.trim();
+    if(!(fy>=2560 && fy<=2700)) return flash("nyMsg","ใส่ปีงบ เช่น 2571","err");
+    if(!/docs\.google\.com\/spreadsheets\/d\//.test(src)) return flash("nyMsg","ใส่ลิงก์ไฟล์ต้นทาง (Google Sheet)","err");
+    if(disp && !/docs\.google\.com\/spreadsheets\/d\//.test(disp)) return flash("nyMsg","ลิงก์ไฟล์แสดงผลไม่ถูกต้อง","err");
+    const ok = await ask({title:"เพิ่มปีงบ "+fy, tone:"warn", okText:"เพิ่มปีงบ", password: checkDeletePass, nameLabel:"ชื่อผู้เพิ่มปีงบ",
+      html:`<p style="margin:0">ระบบจะสร้างชีท 2–6 ในไฟล์ต้นทาง คัดลอกรายชื่อเครื่อง / รหัส บ.ล. / ภารกิจจากปีก่อน และตั้งไฟล์แสดงผลให้</p>`});
+    if(!ok) return;
+    const btn = $("nyBtn"); btn.disabled = true; flash("nyMsg","กำลังตั้งค่าไฟล์… (อาจใช้เวลา 10–30 วินาที)","");
+    try{ const r = await window.LOGBOOK_ADMIN.addYear({fy, srcUrl: src, dispUrl: disp, byName: state.lastModalName||""});
+      $("nyMsg").textContent = `✓ เพิ่มปีงบ ${r.fy} แล้ว (${r.name}) · ${r.display} · ช่องปีงบประมาณด้านบนเลือก ${r.fy} ได้แล้ว`; $("nyMsg").className = "msg ok";
+      $("nySrc").value = ""; $("nyDisp").value = ""; $("nyFy").value = ""; showYears();
+      if(![...fySel.options].some(o=>+o.value===r.fy)) fySel.insertAdjacentHTML("beforeend", `<option value="${r.fy}">${r.fy}</option>`);
+    }catch(err){ flash("nyMsg", "เพิ่มปีงบไม่สำเร็จ: " + errText(err), "err"); }
+    finally{ btn.disabled = false; }
+  };
+}
 // ---------- boot ----------
 function applyWrite(){
   const ro = state.canWrite === false;
