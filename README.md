@@ -78,7 +78,8 @@ Apps Script Web app ──► 602DB_LOG BOOK ปีงบ70_ต้นทาง  
 2. **เปิดให้บอทเข้ากลุ่มได้** — LINE Official Account Manager → ตั้งค่า → บัญชี → **อนุญาตให้บัญชีเข้าร่วมกลุ่ม** · ตั้งค่าการตอบกลับ → ปิด “ข้อความตอบกลับอัตโนมัติ” เปิด **Webhook**
 3. **เอา Token** — Developers Console → channel → แท็บ **Messaging API** → **Channel access token (long-lived)** → Issue → คัดลอก
 4. **วางสคริปต์** — Apps Script → แทน `Code.gs` ด้วยไฟล์ใหม่ · กด **＋ → สคริปต์** ตั้งชื่อ `Line` วางเนื้อหาจาก `apps-script/Line.gs`
-5. **Script Properties** — เพิ่ม `LINE_TOKEN` = token จากข้อ 3
+5. **appsscript.json** — วางเนื้อหาใหม่จาก `apps-script/appsscript.json` (เพิ่มสิทธิ์ script.external_request สำหรับส่ง LINE)
+6. **Script Properties** — เพิ่ม `LINE_TOKEN` = token จากข้อ 3
 6. **Deploy เวอร์ชันใหม่** — Deploy → จัดการการทำให้ใช้งานได้ → ✏ → เวอร์ชันใหม่ → Deploy (URL เดิม)
    ครั้งแรกจะขออนุญาต “เชื่อมต่อบริการภายนอก” → อนุญาต
 7. **ตั้ง Webhook** — Developers Console → แท็บ Messaging API → Webhook URL = URL Web app (`…/exec`) → Update → เปิด **Use webhook**
