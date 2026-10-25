@@ -214,6 +214,8 @@ function lineSetup() {
 }
 /** ส่งข้อความทดสอบ (ตัวอย่างตามแบบ 2.1) */
 function lineTest() {
+  if (!prop_('LINE_TOKEN', '')) return console.warn('ยังไม่มี LINE_TOKEN ใน Script Properties');
+  if (!prop_('LINE_TO', '')) return console.warn('สิทธิ์ผ่านแล้ว ✓ · ยังไม่มีกลุ่มปลายทาง — ตั้ง Webhook แล้วพิมพ์ "ลงทะเบียน" ในกลุ่ม LINE ก่อน จากนั้น Run lineTest อีกครั้ง');
   linePush_(msgNewEntry_({ recorder: 'ทดสอบระบบ', type: 'dechochai', scope: 'domestic', mission: 'ทดสอบการแจ้งเตือน LINE',
     route: 'ดอนเมือง-บน.4-ดอนเมือง', hours: 2, pax: 50, cargo: 120, flights: 2, note: '', adminMsg: '' }));
   console.log('ส่งแล้ว — ตรวจในกลุ่ม LINE');
