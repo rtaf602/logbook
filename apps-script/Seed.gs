@@ -1,0 +1,395 @@
+/** ข้อมูลตั้งต้น (ฐานข้อมูลปัจจุบัน ณ 25 ต.ค.69) — setup() ใช้ใส่ครั้งแรกเมื่อชีทยังว่าง */
+const SEED = {
+ "entries": [
+  {
+   "id": "imp6901",
+   "ym": "2026-10",
+   "day": 3,
+   "type": "training",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "ฝึกบิน",
+   "airports": [
+    "บน.6",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.6",
+   "scope": "domestic",
+   "flights": 1,
+   "flightsManual": false,
+   "hours": 0.5,
+   "pax": null,
+   "cargo": null,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-03T00:00:00.000Z"
+  },
+  {
+   "id": "imp6902",
+   "ym": "2026-10",
+   "day": 7,
+   "type": "dechochai",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "รับ 911 พร้อมผู้ตามเสด็จ และ จนท.สวบ.ทอ.",
+   "airports": [
+    "บน.6",
+    "บน.41",
+    "บก.ทอ."
+   ],
+   "route": "บน.6-บน.41-บก.ทอ.",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 2.3,
+   "pax": 36,
+   "cargo": 150,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-07T00:00:01.000Z"
+  },
+  {
+   "id": "imp6903",
+   "ym": "2026-10",
+   "day": 8,
+   "type": "dechochai",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "บ.พระที่นั่งสำรองเตรียมพร้อมปฏิบัติภารกิจ รับ HMSV พร้อมผู้ตามเสด็จ และ บ.เตรียมพร้อมปฏิบัติภารกิจ ลำเลียงสายแพทย์ทางอากาศ HMSV",
+   "airports": [
+    "บน.6",
+    "บน.7",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.7-บน.6",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 2.7,
+   "pax": 54,
+   "cargo": 1500,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-08T00:00:02.000Z"
+  },
+  {
+   "id": "imp6904",
+   "ym": "2026-10",
+   "day": 8,
+   "type": "training",
+   "aircraft": "AIRBUS 340 (04)",
+   "mission": "ฝึกบิน",
+   "airports": [
+    "บน.6",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.6",
+   "scope": "domestic",
+   "flights": 1,
+   "flightsManual": false,
+   "hours": 1.2,
+   "pax": null,
+   "cargo": null,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-08T00:00:03.000Z"
+  },
+  {
+   "id": "imp6905",
+   "ym": "2026-10",
+   "day": 9,
+   "type": "vip",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "รับ นายอรรถนิติ องคมนตรี เป็นผู้แทนพระองค์ และคณะฯ",
+   "airports": [
+    "บน.6",
+    "บน.1",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.1-บน.6",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 1.5,
+   "pax": 8,
+   "cargo": null,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-09T00:00:04.000Z"
+  },
+  {
+   "id": "imp6906",
+   "ym": "2026-10",
+   "day": 10,
+   "type": "dechochai",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "บ.พระที่นั่งสำรองเตรียมพร้อมปฏิบัติภารกิจ รับ-ส่ง 904,HMSV พร้อมผู้ตามเสด็จ และ บ.เตรียมพร้อมปฏิบัติภารกิจ ลำเลียงสายแพทย์ทางอากาศ 904,HMSV",
+   "airports": [
+    "บน.6",
+    "บน.56",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.56-บน.6",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 3,
+   "pax": 52,
+   "cargo": 200,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-10T00:00:05.000Z"
+  },
+  {
+   "id": "imp6907",
+   "ym": "2026-10",
+   "day": 12,
+   "type": "dechochai",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "รับ-ส่ง 905 พร้อมผู้ตามเสด็จ",
+   "airports": [
+    "ดอนเมือง",
+    "หาดใหญ่",
+    "ดอนเมือง"
+   ],
+   "route": "ดอนเมือง-หาดใหญ่-ดอนเมือง",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 2.9,
+   "pax": 65,
+   "cargo": 0,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-12T00:00:06.000Z"
+  },
+  {
+   "id": "imp6908",
+   "ym": "2026-10",
+   "day": 13,
+   "type": "vip",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "ส่ง พล.อ.อ.ไพฑูรย์ ไล้เลิศ ปธ.คปษ.ทอ. และ คณก.บริหารงานพระมหาธาตุ นภเมทนีดล นภพลภูมิสิริ",
+   "airports": [
+    "บน.6",
+    "บน.41",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.41-บน.6",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 2.3,
+   "pax": 92,
+   "cargo": 350,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-13T00:00:07.000Z"
+  },
+  {
+   "id": "imp6909",
+   "ym": "2026-10",
+   "day": 14,
+   "type": "vip",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "รับ พล.อ.อ.ไพฑูรย์ ไล้เลิศ ปธ.คปษ.ทอ. และ คณก.บริหารงานพระมหาธาตุ นภเมทนีดล นภพลภูมิสิริ",
+   "airports": [
+    "บน.6",
+    "บน.41",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.41-บน.6",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 2.4,
+   "pax": 80,
+   "cargo": 600,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-14T00:00:08.000Z"
+  },
+  {
+   "id": "imp6910",
+   "ym": "2026-10",
+   "day": 15,
+   "type": "training",
+   "aircraft": "AIRBUS 340 (04)",
+   "mission": "ฝึกบิน",
+   "airports": [
+    "บน.6",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.6",
+   "scope": "domestic",
+   "flights": 1,
+   "flightsManual": false,
+   "hours": 1,
+   "pax": null,
+   "cargo": null,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-15T00:00:09.000Z"
+  },
+  {
+   "id": "imp6911",
+   "ym": "2026-10",
+   "day": 15,
+   "type": "vip",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "รับ-ส่ง พล.อ.ท.วินัย พุ่มไพจิตร ราชองครักษ์ประจำพระองค์และคณะสำรวจพื่นที่ 905",
+   "airports": [
+    "บน.6",
+    "บน.21",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.21-บน.6",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 2.3,
+   "pax": 21,
+   "cargo": null,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-15T00:00:10.000Z"
+  },
+  {
+   "id": "imp6912",
+   "ym": "2026-10",
+   "day": 19,
+   "type": "training",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "ฝึกบิน",
+   "airports": [
+    "บน.6",
+    "บน.46",
+    "อู่ตะเภา",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.46-อู่ตะเภา-บน.6",
+   "scope": "domestic",
+   "flights": 7,
+   "flightsManual": true,
+   "hours": 3.7,
+   "pax": null,
+   "cargo": null,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-19T00:00:11.000Z"
+  },
+  {
+   "id": "imp6913",
+   "ym": "2026-10",
+   "day": 20,
+   "type": "vip",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "รับ-ส่ง พล.ต.ท.สกลเขต จันทรา กรมวังผู้ใหญ่ประจำพระองค์904 และคณะสำรวจพื้นที่ 919",
+   "airports": [
+    "บน.6",
+    "บน.21",
+    "บน.6"
+   ],
+   "route": "บน.6-บน.21-บน.6",
+   "scope": "domestic",
+   "flights": 2,
+   "flightsManual": false,
+   "hours": 2.3,
+   "pax": 94,
+   "cargo": null,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-20T00:00:12.000Z"
+  },
+  {
+   "id": "imp6914",
+   "ym": "2026-10",
+   "day": 21,
+   "type": "vip",
+   "aircraft": "AIRBUS 320 (05)",
+   "mission": "รับ-ส่ง พล.อ.ไพบูลย์ คุ้มฉายา องคมนตรี และคณะฯ",
+   "airports": [
+    "บน.6",
+    "นราธิวาส",
+    "บน.56",
+    "บน.6"
+   ],
+   "route": "บน.6-นราธิวาส-บน.56-บน.6",
+   "scope": "domestic",
+   "flights": 3,
+   "flightsManual": false,
+   "hours": 4,
+   "pax": 40,
+   "cargo": null,
+   "note": "",
+   "adminMsg": "",
+   "unknownAirports": [],
+   "recorder": "นำเข้าจากไฟล์ บันทึกภารกิจ 1-22 ต.ค.69",
+   "at": "2026-10-21T00:00:13.000Z"
+  }
+ ],
+ "alloc": {
+  "2570": {
+   "15": {
+    "total": 1696,
+    "training": 896,
+    "revisions": []
+   },
+   "18": {
+    "total": 90,
+    "training": 55,
+    "revisions": []
+   },
+   "19": {
+    "total": 423.6,
+    "training": 175,
+    "revisions": []
+   }
+  }
+ },
+ "lists": {
+  "aircraft": [
+   "AIRBUS 319 CJ (02)",
+   "AIRBUS 320 (03)",
+   "AIRBUS 320 (05)",
+   "AIRBUS 340 (04)",
+   "SSJ (06)",
+   "SSJ (07)",
+   "SSJ (08)"
+  ],
+  "codes": {
+   "AIRBUS 319 CJ (02)": "บ.ล.15",
+   "AIRBUS 320 (03)": "บ.ล.15ก",
+   "AIRBUS 320 (05)": "บ.ล.15ก",
+   "AIRBUS 340 (04)": "บ.ล.19",
+   "SSJ (06)": "บ.ล.18",
+   "SSJ (07)": "บ.ล.18",
+   "SSJ (08)": "บ.ล.18"
+  },
+  "mission": [],
+  "route": []
+ }
+};
