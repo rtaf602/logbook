@@ -5,7 +5,7 @@
  */
 window.LOGBOOK_CONFIG = {
   API: {
-    2570: "PASTE_WEB_APP_URL_HERE",
+    2570: "https://script.google.com/macros/s/AKfycbxjTaBUDijNafQzpLSHZJB-59KVD29Zy6h-CEY81DCaNMPVTwsAsMRfuKCCPa3ecsWx/exec",
   },
   POLL_SECONDS: 30,      // ดึงข้อมูลใหม่ทุกกี่วินาที (ขณะเปิดหน้าอยู่)
 };
