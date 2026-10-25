@@ -178,6 +178,7 @@ function lineWebhook_(body) {
   (body.events || []).forEach(ev => {
     try {
       const src = ev.source || {}, id = src.groupId || src.roomId || src.userId;
+      if (id) PropertiesService.getScriptProperties().setProperty('LINE_LAST_ID', id);   // ID ห้องล่าสุดที่คุยกับบอท (คัดลอกไปใส่ LINE_TO ได้)
       const text = ev.type === 'message' && ev.message && ev.message.type === 'text' ? String(ev.message.text).trim() : '';
       const wantReg = /^(ลงทะเบียน|register)$/i.test(text), wantId = /^(id|ไอดี)$/i.test(text);
       if (!ev.replyToken || !id || !(ev.type === 'join' || wantReg || wantId)) return;
