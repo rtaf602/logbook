@@ -52,6 +52,7 @@ function doGet() { return json_({ ok: true, service: '602 LOG BOOK', years: Obje
 function doPost(e) {
   let req = {};
   try { req = JSON.parse(e.postData.contents || '{}'); } catch (err) { return json_({ ok: false, error: 'คำขอไม่ถูกต้อง' }); }
+  if (req.destination && Array.isArray(req.events)) return lineWebhook_(req);   // คำขอจาก LINE (Line.gs)
   try {
     if (!checkHash_(req.key, prop_('ENTRY_HASH', CFG.ENTRY_HASH))) return json_({ ok: false, code: 'auth', error: 'รหัสเข้าใช้งานไม่ถูกต้อง' });
     const admin = () => { if (!checkHash_(req.admin, prop_('ADMIN_HASH', CFG.ADMIN_HASH))) throw httpErr_('auth', 'รหัส ADMIN ไม่ถูกต้อง'); };
@@ -60,13 +61,24 @@ function doPost(e) {
     switch (req.action) {
       case 'years': return json_({ ok: true, years: years.map(y => ({ fy: y, src: url_(reg[y].src), disp: reg[y].disp ? url_(reg[y].disp) : '' })) });
       case 'entries': return json_({ ok: true, fy, registered: has, entries: has ? readEntries_(fy) : [] });
-      case 'save': need_(has, fy); return json_(withLock_(() => saveEntry_(fy, req)));
-      case 'delete': admin(); need_(has, fy); return json_(withLock_(() => deleteEntry_(fy, req)));
+      // แจ้งเตือน LINE หลังบันทึกสำเร็จ (Line.gs) — ส่งไม่สำเร็จไม่กระทบการบันทึก
+      case 'save': need_(has, fy); return json_(withLock_(() => {
+        const out = saveEntry_(fy, req), n = out._line; delete out._line;
+        lineNotify_(n.edit ? msgEditEntry_(n.entry, n.who, n.changes) : msgNewEntry_(n.entry));
+        return out; }));
+      case 'delete': admin(); need_(has, fy); return json_(withLock_(() => {
+        const out = deleteEntry_(fy, req), old = out._old; delete out._old;
+        lineNotify_(msgDeleteEntry_(old, req.byName)); return out; }));
       case 'alloc': return json_({ ok: true, alloc: has ? readAlloc_(fy) : null });
-      case 'setAlloc': admin(); need_(has, fy); return json_(withLock_(() => writeAlloc_(fy, req)));
+      case 'setAlloc': admin(); need_(has, fy); return json_(withLock_(() => {
+        const before = readAlloc_(fy), out = writeAlloc_(fy, req);
+        lineNotify_(msgAlloc_(before, readAlloc_(fy), req.byName)); return out; }));
       case 'lists': return json_({ ok: true, lists: readLists_(has ? fy : latest) });
-      case 'setLists': admin(); return json_(withLock_(() => writeLists_(has ? fy : latest, req)));
-      case 'addYear': admin(); return json_(withLock_(() => addYear_(req)));
+      case 'setLists': admin(); return json_(withLock_(() => {
+        const lfy = has ? fy : latest, before = readLists_(lfy), out = writeLists_(lfy, req);
+        lineNotify_(msgLists_(before, readLists_(lfy), req.byName)); return out; }));
+      case 'addYear': admin(); return json_(withLock_(() => {
+        const out = addYear_(req); lineNotify_(msgAddYear_(out.fy, req.byName)); return out; }));
       case 'airports': return json_({ ok: true, airports: readAirports_(!!req.refresh) });
       default: return json_({ ok: false, error: 'ไม่รู้จักคำสั่ง ' + req.action });
     }
@@ -162,12 +174,12 @@ function saveEntry_(fy, req) {
     sh.getRange(at, 1, 1, newRow.length).setValues([newRow]); formatLogRow_(sh, at);
     const changes = diff_(old, e);
     changes.forEach(c => history_(fy, 'แก้ไข', e, c.label, c.before, c.after, e.editedByName || '', ''));
-    return { ok: true, id, changes: changes.length };
+    return { ok: true, id, changes: changes.length, _line: { edit: true, entry: e, who: e.editedByName || '', changes } };
   }
   e.id = id || newId_(); e.at = e.at || new Date().toISOString(); e.editedByName = ''; e.editedAt = '';
   const row = entryToRow_(e, codes), r = Math.max(sh.getLastRow() + 1, FIRST);
   sh.getRange(r, 1, 1, row.length).setValues([row]); formatLogRow_(sh, r);
-  return { ok: true, id: e.id };
+  return { ok: true, id: e.id, _line: { edit: false, entry: e } };
 }
 function deleteEntry_(fy, req) {
   const sh = sheet_(fy, SH.LOG), at = findRow_(sh, String(req.id || ''));
@@ -175,7 +187,7 @@ function deleteEntry_(fy, req) {
   const old = rowToEntry_(sh.getRange(at, 1, 1, LOG_COLS.length).getValues()[0]);
   history_(fy, 'ลบ', old, '(ทั้งรายการ)', JSON.stringify(old), '', req.byName || '', req.reason || '');
   sh.deleteRow(at);
-  return { ok: true };
+  return { ok: true, _old: old };
 }
 function diff_(a, b) {
   const keys = ['day', 'type', 'aircraft', 'mission', 'route', 'scope', 'flights', 'flightsManual', 'hours', 'pax', 'cargo', 'note', 'adminMsg'];
