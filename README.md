@@ -74,7 +74,7 @@ Apps Script Web app ──► 602DB_LOG BOOK ปีงบ70_ต้นทาง  
 แจ้งเข้ากลุ่ม LINE เมื่อ: บันทึก / แก้ไข / ลบภารกิจ · บันทึกตั้งค่ารายการตัวเลือก · เพิ่มปีงบใหม่ · บันทึกชั่วโมงจัดสรร / Revise
 (LINE Notify ปิดบริการแล้ว จึงใช้ LINE Messaging API แทน)
 
-1. **สร้างบอท** — เข้า https://developers.line.biz/console/ → สร้าง Provider → **Create a Messaging API channel** (ระบบจะสร้าง LINE Official Account ให้) ตั้งชื่อ `CHAT BOT ขสอ.`
+1. **สร้างบอท** — สร้าง LINE Official Account ชื่อ `CHAT BOT ขสอ.` ที่ https://manager.line.biz → เข้าบัญชีนั้น → **ตั้งค่า → Messaging API → เปิดใช้ Messaging API** → ตั้งชื่อ Provider (เปลี่ยนภายหลังไม่ได้) — ระบบจะสร้าง channel ให้ (ตั้งแต่ ก.ย. 2567 สร้าง channel จาก Developers Console โดยตรงไม่ได้แล้ว)
 2. **เปิดให้บอทเข้ากลุ่มได้** — LINE Official Account Manager → ตั้งค่า → บัญชี → **อนุญาตให้บัญชีเข้าร่วมกลุ่ม** · ตั้งค่าการตอบกลับ → ปิด “ข้อความตอบกลับอัตโนมัติ” เปิด **Webhook**
 3. **เอา Token** — Developers Console → channel → แท็บ **Messaging API** → **Channel access token (long-lived)** → Issue → คัดลอก
 4. **วางสคริปต์** — Apps Script → แทน `Code.gs` ด้วยไฟล์ใหม่ · กด **＋ → สคริปต์** ตั้งชื่อ `Line` วางเนื้อหาจาก `apps-script/Line.gs`
