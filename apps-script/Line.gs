@@ -174,6 +174,7 @@ function lineFlush() {
 // ======================= Webhook: ลงทะเบียนกลุ่ม =======================
 /** doPost ส่งคำขอจาก LINE มาที่นี่ (มี destination + events) */
 function lineWebhook_(body) {
+  console.log('LINE webhook: ' + (body.events || []).length + ' event(s) ' + JSON.stringify((body.events || []).map(e => [e.type, (e.source || {}).type, e.message && e.message.text])));
   (body.events || []).forEach(ev => {
     try {
       const src = ev.source || {}, id = src.groupId || src.roomId || src.userId;
@@ -201,7 +202,9 @@ function lineReply_(replyToken, text) {
     headers: { Authorization: 'Bearer ' + token },
     payload: JSON.stringify({ replyToken, messages: [{ type: 'text', text }] }),
   });
-  return res.getResponseCode() === 200;
+  const ok = res.getResponseCode() === 200;
+  console.log('LINE reply ' + res.getResponseCode() + (ok ? '' : ': ' + res.getContentText()));
+  return ok;
 }
 
 // ======================= เรียกเองจากหน้า Apps Script =======================
