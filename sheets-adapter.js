@@ -83,14 +83,15 @@
     return { tag, key: await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]) };
   }
   function clearCache() { try { Object.keys(localStorage).filter(k => k.indexOf(CK) === 0).forEach(k => localStorage.removeItem(k)); } catch (e) { } }
-  async function cachePut(fy, entries) {
+  async function cachePut(fy, entries, name) {
     try { const c = await cacheCtx(); if (!c) return; const iv = crypto.getRandomValues(new Uint8Array(12));
       const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, c.key, te.encode(JSON.stringify({ at: Date.now(), entries })));
-      localStorage.setItem(CK + fy, JSON.stringify({ t: c.tag, iv: b64(iv), ct: b64(ct) })); } catch (e) { }
+      localStorage.setItem(CK + (name || fy), JSON.stringify({ t: c.tag, iv: b64(iv), ct: b64(ct) })); } catch (e) { }
   }
-  async function cacheGet(fy) {
-    try { const box = JSON.parse(localStorage.getItem(CK + fy) || "null"); if (!box) return null;
-      const c = await cacheCtx(); if (!c || box.t !== c.tag) { localStorage.removeItem(CK + fy); return null; }
+  async function cacheGet(fy, name) {
+    const k = CK + (name || fy);
+    try { const box = JSON.parse(localStorage.getItem(k) || "null"); if (!box) return null;
+      const c = await cacheCtx(); if (!c || box.t !== c.tag) { localStorage.removeItem(k); return null; }
       const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(box.iv) }, c.key, unb64(box.ct));
       return JSON.parse(new TextDecoder().decode(pt)); } catch (e) { return null; }
   }
@@ -117,7 +118,12 @@
 
   // ---------- เอกสารเดี่ยว: สนามบิน / รายการตัวเลือก / ชั่วโมงจัดสรร ----------
   const DOCS = {};
-  function docState(path) { return DOCS[path] || (DOCS[path] = { subs: new Set(), value: undefined, busy: null }); }
+  function docState(path) { return DOCS[path] || (DOCS[path] = { subs: new Set(), value: undefined, busy: null, cacheTried: false }); }
+  const KEEP_DOC = p => p === "config/lists" || /^adminalloc\/fy\d+$/.test(p);
+  function docFromCache(path) {
+    const s = docState(path); if (s.cacheTried || !KEEP_DOC(path)) return; s.cacheTried = true;
+    cacheGet(0, "doc:" + path).then(c => { if (c && s.value === undefined) { s.value = c.entries; s.subs.forEach(x => x.fire()); } });
+  }
   async function loadDoc(path) {
     if (path === "config/airports") { const j = await call(0, "airports"); return j.airports; }
     if (path === "config/lists") { const j = await call(0, "lists"); return j.lists; }
@@ -128,7 +134,7 @@
   }
   function refreshDoc(path) {
     const s = docState(path); if (s.busy) return s.busy;
-    s.busy = loadDoc(path).then(v => { s.value = v; s.subs.forEach(x => x.fire()); })
+    s.busy = loadDoc(path).then(v => { s.value = v; s.subs.forEach(x => x.fire()); if (KEEP_DOC(path)) cachePut(0, v, "doc:" + path); })
       .catch(err => s.subs.forEach(x => x.err && x.err(err))).finally(() => { s.busy = null; });
     return s.busy;
   }
@@ -173,7 +179,7 @@
         onSnapshot(next, err) {
           const s = docState(path), sub = { fire: () => next(docSnap(s.value)), err };
           s.subs.add(sub);
-          if (s.value !== undefined) setTimeout(sub.fire, 0); else refreshDoc(path);
+          if (s.value !== undefined) setTimeout(sub.fire, 0); else { docFromCache(path); refreshDoc(path); }
           return () => s.subs.delete(sub);
         },
         async set(obj) {

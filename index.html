@@ -1722,7 +1722,7 @@ function adEnsure(){
   if(state.ad.fy !== fy){
     Object.values(state.ad.subs).forEach(u=>u()); state.ad.subs = {}; state.ad.rows = {};
     if(state.ad.allocUnsub){ state.ad.allocUnsub(); state.ad.allocUnsub = null; }
-    state.ad.fy = fy; state.ad.alloc = null; state.ad.from = 0;
+    state.ad.fy = fy; state.ad.alloc = null; state.ad.allocSeen = false; state.ad.from = 0;
     const ms = adMonths(); const k = `${now.getFullYear()}-${pad2(now.getMonth()+1)}`;
     const ci = ms.findIndex(m=>m.key===k); state.ad.to = ci>=0 ? ci : 11;
     state.ad.day = ci>=0 ? now.getDate() : ms[11].days;
@@ -1735,7 +1735,7 @@ function adEnsure(){
   adMonths().forEach(m => { if(!state.ad.subs[m.key]) state.ad.subs[m.key] = state.db.collection(`months/${m.key}/entries`).onSnapshot(snap => {
     state.ad.rows[m.key] = snap.docs.map(d => ({id:d.id, _ym:m.key, ...d.data()})); renderAdmin(); }, ()=>{}); });
   if(!state.ad.allocUnsub) state.ad.allocUnsub = state.db.doc(`adminalloc/fy${fy}`).onSnapshot(s => {
-    state.ad.alloc = s.exists ? s.data() : (AD_DEFAULTS[fy] || null); if(!state.ad.dirty) buildAllocForm(); renderAdmin(); }, ()=>{});
+    state.ad.allocSeen = true; state.ad.alloc = s.exists ? s.data() : (AD_DEFAULTS[fy] || null); if(!state.ad.dirty) buildAllocForm(); renderAdmin(); }, ()=>{});
   renderAdmin();
 }
 $("adFrom").onchange = () => { state.ad.from = +$("adFrom").value; if(state.ad.from > state.ad.to){ state.ad.to = state.ad.from; $("adTo").value = state.ad.to; } renderAdmin(); };
@@ -1880,7 +1880,11 @@ function renderAdmin(){
   const ms = adMonths(), b = state.ad.to, a = Math.min(state.ad.from, b);
   const sel = state.ad.sel || (state.ad.sel = "15");
   $("adExpRange").textContent = `Export Excel ช่วงที่เลือก (1 ${ms[a].label} – ${Math.min(state.ad.day||31, ms[b].days)} ${ms[b].label})`;
-  $("adNote").hidden = !!state.ad.alloc;
+  // ยังไม่ได้คำตอบจากฐานข้อมูล: บอกว่ากำลังโหลด (ไม่ใช่ “ยังไม่มีชั่วโมงจัดสรร”)
+  const adLoading = !state.ad.allocSeen;
+  $("adNote").hidden = !!state.ad.alloc && !adLoading;
+  $("adNote").className = "status" + (adLoading ? "" : " warn");
+  $("adNote").textContent = adLoading ? "กำลังโหลดชั่วโมงจัดสรรและชั่วโมงบินจากฐานข้อมูล…" : "ยังไม่มีชั่วโมงจัดสรรของปีงบนี้ — กรอกด้านบนแล้วกดบันทึก";
   $("adFy2").textContent = state.fy;
   const all = AD_GROUPS.map(g => ({g, d: adGroupData(g), A: (state.ad.alloc && state.ad.alloc.groups && state.ad.alloc.groups[g.key]) || null}));
   // overview cards — one per aircraft class, click to open
