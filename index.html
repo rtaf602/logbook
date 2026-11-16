@@ -45,7 +45,7 @@
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;margin:0;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 button,select,input{touch-action:manipulation}
-.wrap{max-width:1320px;margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+.wrap{max-width:min(100%,1880px);margin:0 auto;padding-block:20px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
 h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:.01em}
 h1{font-size:clamp(22px,3.2vw,30px);font-weight:700}
 h2{font-size:18px;font-weight:600}
@@ -73,11 +73,16 @@ label.f{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:600;m
 
 .main{display:grid;gap:16px;min-width:0}
 #formPanel{max-width:680px;width:100%;margin-inline:auto}
-.views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
+.views{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:5px}
 .views button{border:0;background:transparent;font:inherit;font-family:var(--f-display);font-size:16px;font-weight:600;color:var(--muted);padding:10px 8px;border-radius:8px;cursor:pointer;min-height:44px}
 .views button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .gate{position:fixed;inset:0;z-index:80;background:var(--bg);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow:auto}
+.gate-card .lockmark{color:var(--accent);display:flex;justify-content:center}
 .gate-card{background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:14px;padding:24px;width:min(420px,100%);display:grid;gap:12px}
+.whobar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.role-tag{font:600 12.5px/1 var(--f-body);padding:4px 8px;border-radius:999px;background:var(--navy-soft);color:var(--navy)}
+.rankrow{display:grid;grid-template-columns:minmax(110px,170px) minmax(0,1fr);gap:10px}
+.namebox{min-height:40px;display:flex;align-items:center;padding:8px 12px;border:1px dashed var(--line);border-radius:8px;background:var(--soft);font-weight:600}
 .modal{position:fixed;inset:0;z-index:50;background:rgba(10,16,28,.55);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .modal .sheet{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:14px;padding:20px;width:min(460px,100%);display:grid;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.3);max-height:100%;overflow:auto}
 .modal .sheet.danger{border-top:4px solid var(--danger)}
@@ -294,26 +299,58 @@ details.settings summary{cursor:pointer;font-family:var(--f-display);font-weight
 .lists textarea{font:inherit;font-size:14px;width:100%;min-height:150px;border:1px solid var(--line);border-radius:6px;padding:8px;background:var(--panel);color:var(--ink);resize:vertical}
 .foot{font-size:12.5px;color:var(--muted)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ตารางสรุปตามแบบ บ. / ตาม บ.แบบ แยกประเภทภารกิจ (หน้าตาแบบไฟล์ Excel) */
+.sumx{display:grid;gap:10px}
+.sumx-bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.seg2{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
+.seg2 button{font:600 15px var(--f-body);color:var(--ink);background:transparent;border:0;padding:6px 12px;cursor:pointer;border-right:1px solid var(--line)}
+.seg2 button:last-child{border-right:0}
+.seg2 button[aria-pressed="true"]{background:var(--navy);color:var(--panel)}
+.fyr{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fyr label{display:inline;margin:0;font-size:15px}
+.fyr select{width:auto;min-width:96px;font:inherit;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+:root{--xl-head:#DCE6F1;--xl-sum:#EDEDED;--xl-tot:#FFF2CC;--xl-line:#000;--xl-ink:#000;--xl-bg:#fff;--xl-mute:#555}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--xl-head:#26364D;--xl-sum:#2B2F36;--xl-tot:#4A3F1C;--xl-line:#8A93A3;--xl-ink:#EEF1F6;--xl-bg:#171B22;--xl-mute:#A6AEBB}}
+:root[data-theme="dark"]{--xl-head:#26364D;--xl-sum:#2B2F36;--xl-tot:#4A3F1C;--xl-line:#8A93A3;--xl-ink:#EEF1F6;--xl-bg:#171B22;--xl-mute:#A6AEBB}
+.sumx .tbl-wrap{border:0;border-radius:0;overflow-x:auto}
+table.sumx-t{width:100%;min-width:980px;table-layout:fixed;border-collapse:collapse;border:2px solid var(--xl-line);background:var(--xl-bg);color:var(--xl-ink);font-family:var(--f-body)}
+table.sumx-t col.c0{width:12%}
+table.sumx-t th,table.sumx-t td{border:1px solid var(--xl-line);padding:5px 3px;text-align:center;vertical-align:middle;white-space:normal;font-size:16px;line-height:1.2;color:var(--xl-ink);background:var(--xl-bg);font-variant-numeric:tabular-nums;font-family:var(--f-body)}
+table.sumx-t thead th{background:var(--xl-head);font-weight:700;font-size:16px;position:static}
+table.sumx-t tbody th{text-align:left;padding-left:8px;font-weight:400;position:static}
+table.sumx-t .g0{border-left:2px solid var(--xl-line)}
+table.sumx-t td.sc{background:var(--xl-sum);font-weight:700}
+table.sumx-t tr.tot th,table.sumx-t tr.tot td{background:var(--xl-tot);font-weight:700;border-top:2px solid var(--xl-line)}
+table.sumx-t tr.tot th{text-align:center}
+table.sumx-t caption{caption-side:top;text-align:left;font:700 18px/1.3 var(--f-body);padding:0 0 6px;color:var(--ink)}
+.sumx-t th small{display:block;font-weight:400;font-size:13px;color:var(--xl-mute);line-height:1.2}
+.tblh{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.tblh h3{font-size:17px;margin:0}
+.cpy{font:600 15px var(--f-body);color:var(--navy);background:var(--panel);border:1px solid var(--navy);border-radius:8px;padding:5px 12px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.cpys{display:inline-flex;gap:8px;flex-wrap:wrap}
+.imgdlg{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:grid;place-items:center;padding:16px}
+.imgdlg>div{background:var(--panel);border-radius:12px;padding:14px;display:grid;gap:10px;max-width:min(96vw,1400px);max-height:92vh;overflow:auto}
+.imgdlg img{max-width:100%;height:auto;border:1px solid var(--line)}
+.cpy:hover{background:var(--soft)}
+.cpy.ok{background:var(--navy);color:var(--panel)}
 </style>
 
+<!-- หน้าล็อก: แสดงระหว่างตรวจสิทธิ์ / ไม่มีสิทธิ์ / ติดต่อระบบ Login ไม่ได้ (ใครเข้าได้ ตัดสินโดยระบบ Login กลาง ฝูง.602 repo eadmin) -->
 <div class="gate" id="gate">
-  <form class="gate-card" id="gateForm" autocomplete="off">
-    <span class="eyebrow">602 Air Transport Log Book</span>
-    <h1 style="font-size:24px">สมุดบันทึกภารกิจขนส่งอากาศยาน</h1>
-    <p class="muted" style="margin:0">กรอกรหัสเข้าใช้งานเพื่อเปิดระบบ</p>
-    <label class="f">รหัสเข้าใช้งาน
-      <input id="gatePass" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" required>
-    </label>
-    <div class="msg err" id="gateErr" role="alert"></div>
-    <button class="btn primary" type="submit">เข้าใช้งาน</button>
-  </form>
+  <div class="gate-card" role="status">
+    <div class="lockmark" aria-hidden="true"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></div>
+    <span class="eyebrow" style="text-align:center">602 Air Transport Log Book</span>
+    <h1 style="font-size:24px;text-align:center">สมุดบันทึกภารกิจขนส่งอากาศยาน</h1>
+    <div class="msg" id="gateErr" role="alert" style="text-align:center">กำลังตรวจสิทธิ์…</div>
+    <button class="btn primary" type="button" id="gateGo" hidden>กลับหน้าเข้าสู่ระบบ</button>
+  </div>
 </div>
 <div class="wrap" id="app" inert>
   <header class="top">
     <div class="title">
       <span class="eyebrow">Air Transport Mission Log</span>
       <h1>สมุดบันทึกภารกิจขนส่งอากาศยาน</h1>
-      <span class="muted" id="who">กำลังเชื่อมต่อฐานข้อมูล…</span>
+      <span class="whobar"><span class="muted" id="who">กำลังตรวจสิทธิ์…</span><span class="role-tag" id="roleTag" hidden></span><button class="btn sm" type="button" id="signOut" hidden>ออกจากระบบ</button></span>
     </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
       <div class="fy">
@@ -377,9 +414,14 @@ details.settings summary{cursor:pointer;font-family:var(--f-display);font-weight
         <label class="f">ข้อความถึง ADMIN
           <input id="fAdminMsg" placeholder="สิ่งที่ต้องการให้ ADMIN แก้ไข หรือเพิ่มเติม">
         </label>
-        <label class="f">ชื่อผู้บันทึกข้อมูล
-          <input id="fRecorder" placeholder="เช่น ร.อ.ธัญชนิต จินตภากร" required>
-        </label>
+        <div class="rankrow">
+          <label class="f">ยศ
+            <input id="fRank" placeholder="เช่น ร.อ." maxlength="30" autocomplete="off" required>
+          </label>
+          <div class="f" style="display:grid;gap:4px"><span style="font-size:13px;color:var(--muted);font-weight:600">ชื่อผู้บันทึกข้อมูล (จากบัญชีที่ Login)</span>
+            <div class="namebox" id="fName">-</div></div>
+        </div>
+        <div class="hint" style="margin-top:-6px">ยศตั้งต้นจากระบบ Login แก้ได้ถ้ายศเปลี่ยน · ระบบเก็บยศ + ชื่อ ณ วันที่บันทึก รายการเก่าคงยศเดิม</div>
         <div class="row-actions">
           <button class="btn primary" type="submit" id="saveBtn">บันทึกข้อมูล</button>
           <button class="btn" type="button" id="cancelEdit" hidden>ยกเลิกแก้ไข</button>
@@ -394,8 +436,9 @@ details.settings summary{cursor:pointer;font-family:var(--f-display);font-weight
       <div class="panel-h">
         <h2 id="rptTitle">ข้อมูล <span id="rptMonth"></span></h2>
         <div class="row-actions">
-          <button class="btn navy sm" id="expMonth" type="button">Export Excel (ช่วงที่เลือก)</button>
-          <button class="btn sm" id="expYear" type="button">Export ทั้งปีงบ (แยกแท็บรายเดือน)</button>
+          <button class="btn navy sm needEdit" id="expMonth" type="button" hidden>Export Excel (ช่วงที่เลือก)</button>
+          <button class="btn sm needEdit" id="expYear" type="button" hidden>Export ทั้งปีงบ (แยกแท็บรายเดือน)</button>
+          <button class="btn sm needEdit" id="expSum" type="button" hidden>Export สรุปรายปีงบ (ตามแบบ บ.)</button>
         </div>
       </div>
 
@@ -410,13 +453,29 @@ details.settings summary{cursor:pointer;font-family:var(--f-display);font-weight
       <div class="kpis" id="kpis"></div>
 
 
-      <div>
-        <h3 style="font-size:15px;margin-bottom:6px">สรุปตามแบบ บ.</h3>
-        <div class="tbl-wrap"><table id="sumTbl"></table></div>
-      </div>
-      <div>
-        <h3 style="font-size:15px;margin-bottom:6px">สรุปตาม บ.แบบ</h3>
-        <div class="tbl-wrap"><table id="grpTbl"></table></div>
+      <div class="sumx">
+        <div class="panel-h"><h3 style="font-size:17px">สรุปตามแบบ บ. และ บ.แบบ แยกประเภทภารกิจ</h3><span class="muted" id="sxRange"></span></div>
+        <div class="sumx-bar">
+          <span class="muted" style="font-weight:600">ช่วงข้อมูล</span>
+          <div class="seg2" role="group" aria-label="ช่วงข้อมูล" id="sxMode">
+            <button type="button" data-mode="range" aria-pressed="true">ตามช่วงวันที่ด้านบน</button>
+            <button type="button" data-mode="fy" aria-pressed="false">ตามปีงบ</button>
+          </div>
+          <span class="fyr" id="sxFyr" hidden>
+            <label for="sxFy1">ตั้งแต่ปีงบ</label><select id="sxFy1"></select>
+            <label for="sxFy2">ถึงปีงบ</label><select id="sxFy2"></select>
+          </span>
+        </div>
+        <div class="chips" role="group" aria-label="ตารางสรุป" id="sxScope">
+          <button class="chip" type="button" data-s="" aria-pressed="true">รวมในและต่างประเทศ</button>
+          <button class="chip" type="button" data-s="domestic" aria-pressed="false">ในประเทศ</button>
+          <button class="chip" type="button" data-s="international" aria-pressed="false">ต่างประเทศ</button>
+        </div>
+        <div class="tblh"><h3>ตามแบบ บ.</h3><span class="cpys needEdit" hidden><button class="cpy" type="button" data-t="sxTbl1" data-h="ตามแบบ บ." data-l="⧉ คัดลอกไป Excel">⧉ คัดลอกไป Excel</button><button class="cpy cpy-img" type="button" data-t="sxTbl1" data-h="ตามแบบ บ." data-l="▣ คัดลอกเป็นรูป (PowerPoint / Word)">▣ คัดลอกเป็นรูป (PowerPoint / Word)</button></span></div>
+        <div class="tbl-wrap"><table class="sumx-t" id="sxTbl1"></table></div>
+        <div class="tblh" style="margin-top:8px"><h3>ตาม บ.แบบ</h3><span class="cpys needEdit" hidden><button class="cpy" type="button" data-t="sxTbl2" data-h="ตาม บ.แบบ" data-l="⧉ คัดลอกไป Excel">⧉ คัดลอกไป Excel</button><button class="cpy cpy-img" type="button" data-t="sxTbl2" data-h="ตาม บ.แบบ" data-l="▣ คัดลอกเป็นรูป (PowerPoint / Word)">▣ คัดลอกเป็นรูป (PowerPoint / Word)</button></span></div>
+        <div class="tbl-wrap"><table class="sumx-t" id="sxTbl2"></table></div>
+        <p class="muted" style="margin:0;font-size:14px" id="sxNote"></p>
       </div>
 
       <div>
@@ -480,35 +539,35 @@ details.settings summary{cursor:pointer;font-family:var(--f-display);font-weight
       <div id="perfBox" style="display:grid;gap:18px"></div>
     </section>
 
+    <details class="ad-more" id="settings">
+      <summary>ตั้งค่ารายการตัวเลือก (แบบ บ., ภารกิจ, เส้นทางบิน, รหัส บ.แบบ)</summary>
+      <p class="muted" style="margin:0">หนึ่งบรรทัดต่อหนึ่งรายการ · บันทึกต้องใส่รหัส ADMIN</p>
+      <div class="lists">
+        <label class="f">แบบ บ.<textarea id="lsAircraft"></textarea></label>
+        <label class="f">ภารกิจ (ตัวช่วยกรอก)<textarea id="lsMission"></textarea></label>
+        <label class="f">สนามบินเพิ่มเติมที่ ADMIN ยืนยันแล้ว (นอกเหนือจาก Google Sheet)<textarea id="lsRoute"></textarea></label>
+        <label class="f">รหัส บ.แบบ ของแต่ละลำ (ใช้ในไฟล์ Excel) เช่น AIRBUS 320 (05) = บ.ล.15ก<textarea id="lsCodes"></textarea></label>
+      </div>
+      <div class="row-actions"><button class="btn navy" id="saveLists" type="button">บันทึกรายการตัวเลือก</button></div>
+      <div class="msg" id="listMsg" role="status"></div>
+    </details>
+
+    <details class="ad-more" id="addYearBox">
+      <summary>เพิ่มปีงบใหม่ (วางลิงก์ไฟล์ปีงบ)</summary>
+      <p class="muted" style="margin:0">สร้าง Google Sheet เปล่า 2 ไฟล์ แล้ววางลิงก์ด้านล่าง ไม่ต้องแก้โค้ด<br>
+        · <b>ต้นทาง</b> เช่น 602DB_LOG BOOK ปีงบ71_ต้นทาง — สร้างในบัญชี ohomee.aviation@gmail.com (หรือแชร์สิทธิ์ผู้แก้ไขให้บัญชีนี้)<br>
+        · <b>แสดงผล</b> เช่น 602DB_LOG BOOK ปีงบ71_แสดงผล — แชร์สิทธิ์ผู้แก้ไข (Editor) ให้ ohomee.aviation@gmail.com</p>
+      <div id="yearList" class="muted" style="margin:6px 0"></div>
+      <div class="lists">
+        <label class="f">ปีงบ<input id="nyFy" type="number" min="2560" max="2700" inputmode="numeric" placeholder="เช่น 2571"></label>
+        <label class="f">ลิงก์ไฟล์ต้นทาง<input id="nySrc" placeholder="https://docs.google.com/spreadsheets/d/..."></label>
+        <label class="f">ลิงก์ไฟล์แสดงผล<input id="nyDisp" placeholder="https://docs.google.com/spreadsheets/d/..."></label>
+      </div>
+      <div class="row-actions"><button class="btn navy" id="nyBtn" type="button">เพิ่มปีงบ</button></div>
+      <div class="msg" id="nyMsg" role="status"></div>
+    </details>
+
   </section>
-
-  <details class="panel settings" id="settings" hidden>
-    <summary>ตั้งค่ารายการตัวเลือก (แบบ บ., ภารกิจ, เส้นทางบิน, รหัส บ.แบบ)</summary>
-    <p class="muted" style="margin:0">หนึ่งบรรทัดต่อหนึ่งรายการ เฉพาะผู้ดูแล (Editor/Owner) บันทึกได้</p>
-    <div class="lists">
-      <label class="f">แบบ บ.<textarea id="lsAircraft"></textarea></label>
-      <label class="f">ภารกิจ (ตัวช่วยกรอก)<textarea id="lsMission"></textarea></label>
-      <label class="f">สนามบินเพิ่มเติมที่ ADMIN ยืนยันแล้ว (นอกเหนือจาก Google Sheet)<textarea id="lsRoute"></textarea></label>
-      <label class="f">รหัส บ.แบบ ของแต่ละลำ (ใช้ในไฟล์ Excel) เช่น AIRBUS 320 (05) = บ.ล.15ก<textarea id="lsCodes"></textarea></label>
-    </div>
-    <div class="row-actions"><button class="btn navy" id="saveLists" type="button">บันทึกรายการตัวเลือก</button></div>
-    <div class="msg" id="listMsg" role="status"></div>
-  </details>
-
-  <details class="panel settings" id="addYearBox" hidden>
-    <summary>เพิ่มปีงบใหม่ (ADMIN)</summary>
-    <p class="muted" style="margin:0">สร้าง Google Sheet เปล่า 2 ไฟล์ แล้ววางลิงก์ด้านล่าง ไม่ต้องแก้โค้ด<br>
-      · <b>ต้นทาง</b> เช่น 602DB_LOG BOOK ปีงบ71_ต้นทาง — สร้างในบัญชี ohomee.aviation@gmail.com (หรือแชร์สิทธิ์ผู้แก้ไขให้บัญชีนี้)<br>
-      · <b>แสดงผล</b> เช่น 602DB_LOG BOOK ปีงบ71_แสดงผล — แชร์สิทธิ์ผู้แก้ไข (Editor) ให้ ohomee.aviation@gmail.com</p>
-    <div id="yearList" class="muted" style="margin:6px 0"></div>
-    <div class="lists">
-      <label class="f">ปีงบ<input id="nyFy" type="number" min="2560" max="2700" inputmode="numeric" placeholder="เช่น 2571"></label>
-      <label class="f">ลิงก์ไฟล์ต้นทาง<input id="nySrc" placeholder="https://docs.google.com/spreadsheets/d/..."></label>
-      <label class="f">ลิงก์ไฟล์แสดงผล<input id="nyDisp" placeholder="https://docs.google.com/spreadsheets/d/..."></label>
-    </div>
-    <div class="row-actions"><button class="btn navy" id="nyBtn" type="button">เพิ่มปีงบ</button></div>
-    <div class="msg" id="nyMsg" role="status"></div>
-  </details>
 
   <p class="foot">ข้อมูลเก็บแยกตามเดือน · ทุกคนที่เปิดหน้านี้เห็นข้อมูลชุดเดียวกันแบบเรียลไทม์ · ไฟล์ Excel ที่ Export ใช้รูปแบบเดียวกับแบบฟอร์มเดิม (แท็บภารกิจเดโชชัย / บุคคลสำคัญ / ฝึกบิน) และมีแท็บ “รายการทั้งหมด” พร้อมชื่อผู้บันทึกต่อท้าย</p>
 </div>
@@ -520,7 +579,7 @@ details.settings summary{cursor:pointer;font-family:var(--f-display);font-weight
     <label class="f" id="mNameWrap" hidden><span id="mNameLbl">ชื่อผู้ลบข้อมูล</span>
       <input id="mName" placeholder="เช่น ร.อ.ธัญชนิต จินตภากร" autocomplete="off">
     </label>
-    <label class="f" id="mPassWrap" hidden>รหัสลบข้อมูล
+    <label class="f" id="mPassWrap" hidden>รหัส ADMIN
       <input id="mPass" type="password" autocomplete="off" autocapitalize="off" spellcheck="false">
     </label>
     <div class="msg err" id="mErr" role="alert"></div>
@@ -531,6 +590,9 @@ details.settings summary{cursor:pointer;font-family:var(--f-display);font-weight
   </div>
 </div>
 
+<!-- ระบบ Login กลาง ฝูง.602 (repo rtaf602/eadmin) ห้ามถอด -->
+<script src="/eadmin/assets/config.js"></script>
+<script src="/eadmin/assets/app.js"></script>
 <script src="config.js"></script>
 <script src="sheets-adapter.js"></script>
 <script>
@@ -571,15 +633,16 @@ const XG = (() => {
 
   // style ids (cellXfs order below)
   const S = { plain: 0, c: 1, c1: 2, txt: 3, l: 4, totLbl: 5, tot: 6, tot1: 7, hdr: 8, sumL: 9, c0: 10, bold: 11, tag: 12, note: 13, ovHead: 14, ovLbl: 15, ovN1: 16, ovN0: 17, ovTL: 18, ovT1: 19, ovT0: 20,
-    ttl: 21, note2: 22, band: 23, sub: 24, subL: 25, in2: 26, in0: 27, n2: 28, n2b: 29, n3: 30, al2: 31, al2b: 32, mi2b: 33, ac2: 34, to2: 35, top: 36, txt: 37, txtb: 38 };
+    ttl: 21, note2: 22, band: 23, sub: 24, subL: 25, in2: 26, in0: 27, n2: 28, n2b: 29, n3: 30, al2: 31, al2b: 32, mi2b: 33, ac2: 34, to2: 35, top: 36, txt: 37, txtb: 38,
+    sxHead: 39, sxHeadM: 40, sxLbl: 41, sxN0: 42, sxN1: 43, sxN0M: 44, sxS0: 45, sxS1: 46, sxS0M: 47, sxT0: 48, sxT1: 49, sxT0M: 50, sxTL: 51, sxTitle: 52, sxTop: 53, sxNote: 54 };
   const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="7"><numFmt numFmtId="164" formatCode="0.0"/><numFmt numFmtId="165" formatCode="[$-D07041E]#,##0.0;-#,##0.0;&quot;-&quot;"/><numFmt numFmtId="166" formatCode="[$-D07041E]#,##0;-#,##0;&quot;-&quot;"/><numFmt numFmtId="167" formatCode="#,##0.00"/><numFmt numFmtId="168" formatCode="#,##0.00;-#,##0.00;&quot;-&quot;"/><numFmt numFmtId="169" formatCode="0.00%"/><numFmt numFmtId="170" formatCode="#,##0.000"/></numFmts>
-<fonts count="7"><font><sz val="16"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="16"/><name val="TH SarabunPSK"/><family val="2"/></font><font><sz val="13"/><color rgb="FF808080"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="16"/><color rgb="FFFFFFFF"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="16"/><color rgb="FF0000FF"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="20"/><color rgb="FF1F3864"/><name val="TH SarabunPSK"/><family val="2"/></font><font><sz val="14"/><color rgb="FF595959"/><name val="TH SarabunPSK"/><family val="2"/></font></fonts>
-<fills count="11"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF4BACC6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDAEEF3"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFB7DEE8"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF2CC"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEDE7F6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE2EFDA"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFCE4D6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF8E1"/><bgColor indexed="64"/></patternFill></fill></fills>
-<borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border><border><left style="thin"><color rgb="FFFFFFFF"/></left><right style="thin"><color rgb="FFFFFFFF"/></right><top style="thin"><color rgb="FFFFFFFF"/></top><bottom style="thin"><color rgb="FFFFFFFF"/></bottom><diagonal/></border></borders>
+<numFmts count="9"><numFmt numFmtId="164" formatCode="0.0"/><numFmt numFmtId="165" formatCode="[$-D07041E]#,##0.0;-#,##0.0;&quot;-&quot;"/><numFmt numFmtId="166" formatCode="[$-D07041E]#,##0;-#,##0;&quot;-&quot;"/><numFmt numFmtId="167" formatCode="#,##0.00"/><numFmt numFmtId="168" formatCode="#,##0.00;-#,##0.00;&quot;-&quot;"/><numFmt numFmtId="169" formatCode="0.00%"/><numFmt numFmtId="170" formatCode="#,##0.000"/><numFmt numFmtId="171" formatCode="#,##0;-#,##0;&quot;-&quot;"/><numFmt numFmtId="172" formatCode="#,##0.0;-#,##0.0;&quot;-&quot;"/></numFmts>
+<fonts count="8"><font><sz val="16"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="16"/><name val="TH SarabunPSK"/><family val="2"/></font><font><sz val="13"/><color rgb="FF808080"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="16"/><color rgb="FFFFFFFF"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="16"/><color rgb="FF0000FF"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="20"/><color rgb="FF1F3864"/><name val="TH SarabunPSK"/><family val="2"/></font><font><sz val="14"/><color rgb="FF595959"/><name val="TH SarabunPSK"/><family val="2"/></font><font><b/><sz val="18"/><name val="TH SarabunPSK"/><family val="2"/></font></fonts>
+<fills count="13"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FF4BACC6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDAEEF3"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFB7DEE8"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF2CC"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEDE7F6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE2EFDA"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFCE4D6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFF8E1"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDCE6F1"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEDEDED"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="4"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border><border><left style="thin"><color rgb="FFFFFFFF"/></left><right style="thin"><color rgb="FFFFFFFF"/></right><top style="thin"><color rgb="FFFFFFFF"/></top><bottom style="thin"><color rgb="FFFFFFFF"/></bottom><diagonal/></border><border><left style="medium"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders>
 <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="39">
+<cellXfs count="55">
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
 <xf numFmtId="1" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
 <xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
@@ -619,14 +682,31 @@ const XG = (() => {
 <xf numFmtId="169" fontId="1" fillId="9" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
 <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
 <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+<xf numFmtId="0" fontId="1" fillId="11" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="1" fillId="11" borderId="3" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" indent="1" wrapText="1"/></xf>
+<xf numFmtId="171" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="172" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="171" fontId="0" fillId="0" borderId="3" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="171" fontId="1" fillId="12" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="172" fontId="1" fillId="12" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="171" fontId="1" fillId="12" borderId="3" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="171" fontId="1" fillId="6" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="172" fontId="1" fillId="6" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="171" fontId="1" fillId="6" borderId="3" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="1" fillId="6" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="7" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
 </cellXfs>
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
 
   function Sheet(name) { this.name = name; this.cells = {}; this.merges = []; this.cols = []; this.printWide = false; this.printArea = null; this.printTitles = null; this.breaks = []; this.autoFilter = null; }
-  Sheet.prototype.set = function (ref, v, s, isF) {
+  // isF: v is a formula; cv: its value, stored with it so the number shows even before Excel calculates (Protected View)
+  Sheet.prototype.set = function (ref, v, s, isF, cv) {
     const m = /^([A-Z]+)(\d+)$/.exec(ref); const r = +m[2], c = ci(m[1]);
-    (this.cells[r] ||= {})[c] = { v, s: s ?? 0, f: !!isF };
+    (this.cells[r] ||= {})[c] = { v, s: s ?? 0, f: !!isF, cv };
   };
   Sheet.prototype.style = function (ref, s) { const m = /^([A-Z]+)(\d+)$/.exec(ref); const r = +m[2], c = ci(m[1]); const row = (this.cells[r] ||= {}); if (row[c]) row[c].s = s; else row[c] = { v: null, s, f: false }; };
   Sheet.prototype.merge = function (a, b, s) { this.merges.push(`${a}:${b}`); const ma = /^([A-Z]+)(\d+)$/.exec(a), mb = /^([A-Z]+)(\d+)$/.exec(b);
@@ -658,8 +738,10 @@ const XG = (() => {
   Sheet.prototype.xml = function () {
     const rows = Object.keys(this.cells).map(Number).sort((a, b) => a - b).map(r => {
       const cs = Object.keys(this.cells[r]).map(Number).sort((a, b) => a - b).map(c => {
-        const { v, s, f } = this.cells[r][c]; const ref = col(c) + r;
-        if (f) return `<c r="${ref}" s="${s}"><f>${x(v)}</f></c>`;
+        const { v, s, f, cv } = this.cells[r][c]; const ref = col(c) + r;
+        if (f) return `<c r="${ref}" s="${s}"><f>${x(v)}</f>${typeof cv === "number" && isFinite(cv) ? `<v>${cv}</v>` : ""}</c>`;
+        // rich text: [{t, b, sz, color}] (e.g. a name with a smaller grey line under it)
+        if (v && v.rich) return `<c r="${ref}" s="${s}" t="inlineStr"><is>${v.rich.map(p => `<r><rPr>${p.b ? "<b/>" : ""}<sz val="${p.sz || 16}"/>${p.color ? `<color rgb="FF${p.color}"/>` : ""}<rFont val="TH SarabunPSK"/><family val="2"/></rPr><t xml:space="preserve">${x(p.t)}</t></r>`).join("")}</is></c>`;
         if (v == null || v === "") return `<c r="${ref}" s="${s}"/>`;
         if (typeof v === "number") return `<c r="${ref}" s="${s}"><v>${v}</v></c>`;
         return `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${x(v)}</t></is></c>`;
@@ -691,6 +773,44 @@ const XG = (() => {
     add("xl/styles.xml", STYLES);
     sheets.forEach((s, i) => add(`xl/worksheets/sheet${i + 1}.xml`, s.xml()));
     return zip(files);
+  }
+
+  /** สรุปตามแบบ บ. / ตาม บ.แบบ แยกประเภทภารกิจ (ผู้ใช้ขอ 16 พ.ย. 2026): TH SarabunPSK 16, A4 แนวนอน พอดี 1 หน้ากว้าง
+   * spec: {name, title, note, blocks:[{title, head, lines:[{label, sub, v:[[5],[5],[5]]}], tot:[line indexes summed in the total row], brk}]} */
+  function summarySheet(spec) {
+    const sh = new Sheet(spec.name); sh.printWide = true; sh.printTitles = "$1:$2"; sh.rowHt = {};
+    sh.cols = [27, ...Array.from({ length: 20 }, (_, i) => [7.5, 8, 8, 9, 9][i % 5])];
+    const L = n => col(n), GR = ["ภารกิจเดโชชัย", "ภารกิจบุคคลสำคัญ", "ภารกิจฝึกบิน", "รวม"], MS = ["ภารกิจ", "เที่ยวบิน", "ชม.บิน", "ผู้โดยสาร", "พัสดุ/กก."];
+    sh.set("A1", spec.title, S.sxTop); sh.merge("A1", "U1", S.sxTop); sh.rowHt[1] = 30;
+    sh.set("A2", spec.note, S.sxNote); sh.merge("A2", "U2", S.sxNote); sh.rowHt[2] = 24;
+    let r = 4;
+    spec.blocks.forEach(b => {
+      if (b.brk) sh.breaks.push(r - 1);
+      sh.set(`A${r}`, b.title, S.sxTitle); sh.merge(`A${r}`, `U${r}`, S.sxTitle); sh.rowHt[r] = 28; r++;
+      sh.set(`A${r}`, b.head, S.sxHead); sh.merge(`A${r}`, `A${r + 1}`, S.sxHead);
+      GR.forEach((g, k) => { const a = 1 + k * 5; sh.set(`${L(a)}${r}`, g, S.sxHeadM); sh.merge(`${L(a)}${r}`, `${L(a + 4)}${r}`, S.sxHead); sh.style(`${L(a)}${r}`, S.sxHeadM);
+        MS.forEach((m, j) => sh.set(`${L(a + j)}${r + 1}`, m, j ? S.sxHead : S.sxHeadM)); });
+      sh.rowHt[r] = 26; sh.rowHt[r + 1] = 26; r += 2;
+      const first = r, vals = [];
+      b.lines.forEach(ln => {
+        sh.set(`A${r}`, ln.sub ? { rich: [{ t: ln.label + "\n" }, { t: ln.sub, sz: 14, color: "404040" }] } : ln.label, S.sxLbl);
+        sh.rowHt[r] = ln.sub ? 46 : 26;
+        const sum = [0, 0, 0, 0, 0];
+        ln.v.forEach((v5, k) => v5.forEach((v, j) => { const val = j === 2 ? Math.round(v * 100) / 100 : v; sum[j] += val;
+          sh.set(`${L(1 + k * 5 + j)}${r}`, val, j === 2 ? S.sxN1 : j ? S.sxN0 : S.sxN0M); }));
+        for (let j = 0; j < 5; j++) sh.set(`${L(16 + j)}${r}`, `SUM(${[0, 1, 2].map(k => L(1 + k * 5 + j) + r).join(",")})`, j === 2 ? S.sxS1 : j ? S.sxS0 : S.sxS0M, true, j === 2 ? Math.round(sum[j] * 100) / 100 : sum[j]);
+        vals.push([...ln.v.flat(), ...sum]); r++;
+      });
+      sh.set(`A${r}`, "รวมทั้งหมด", S.sxTL); sh.rowHt[r] = 26;
+      const all = b.tot.length === b.lines.length;
+      for (let c = 1; c <= 20; c++) {
+        const j = (c - 1) % 5, cached = b.tot.reduce((t, i) => t + vals[i][c - 1], 0);
+        const f = all ? `SUM(${L(c)}${first}:${L(c)}${r - 1})` : `SUM(${b.tot.map(i => L(c) + (first + i)).join(",")})`;
+        sh.set(`${L(c)}${r}`, f, j === 2 ? S.sxT1 : j ? S.sxT0 : S.sxT0M, true, j === 2 ? Math.round(cached * 100) / 100 : cached);
+      }
+      r += 2;
+    });
+    return sh;
   }
 
   const num = v => (v === null || v === undefined || v === "") ? null : +v;
@@ -921,7 +1041,7 @@ const XG = (() => {
     sh.printArea = [`$A$1:$K$${n}`];
     return sh;
   }
-  return { formSheet, listSheet, overviewSheet, hoursSheet, hoursSummary, book };
+  return { summarySheet, formSheet, listSheet, overviewSheet, hoursSheet, hoursSummary, book };
 })();
 
 </script>
@@ -1175,24 +1295,7 @@ function render(){
   $("kpis").innerHTML = [["ภารกิจ",fmt0(T.n)],["เที่ยวบิน",fmt0(T.flights)],["ชม.บิน",fmt1(T.hours)],["ผู้โดยสาร",fmt0(T.pax)],["พัสดุ/กก.",fmt0(T.cargo)]]
     .map(([l,v])=>`<div class="kpi"><span>${l}</span><b>${v}</b></div>`).join("");
 
-  // summary by aircraft (respects date + type filters, ignores aircraft filter so all lines show)
-  const base = filtered(state.rows, {...state, filterAc:"all"});
-  const acs = [...state.lists.aircraft, ...[...new Set(base.map(r=>r.aircraft))].filter(a=>!state.lists.aircraft.includes(a))];
-  let body = acs.map(ac => { const t = totals(base.filter(r=>r.aircraft===ac));
-    return `<tr class="${t.n?"":"zero"}"><td>${esc(ac)}</td><td class="n">${fmt0(t.n)}</td><td class="n">${fmt0(t.flights)}</td><td class="n">${fmt1(t.hours)}</td><td class="n">${fmt0(t.pax)}</td><td class="n">${fmt0(t.cargo)}</td></tr>`; }).join("");
-  const B = totals(base);
-  $("sumTbl").innerHTML = `<thead><tr><th>แบบ บ.</th><th class="n">ภารกิจ</th><th class="n">เที่ยวบิน</th><th class="n">ชม.บิน</th><th class="n">ผู้โดยสาร</th><th class="n">พัสดุ/กก.</th></tr></thead>
-    <tbody>${body}<tr class="total"><td>รวมทั้งหมด</td><td class="n">${fmt0(B.n)}</td><td class="n">${fmt0(B.flights)}</td><td class="n">${fmt1(B.hours)}</td><td class="n">${fmt0(B.pax)}</td><td class="n">${fmt0(B.cargo)}</td></tr></tbody>`;
-
-  // summary by บ.แบบ group (บ.ล.15/ก combines บ.ล.15 + บ.ล.15ก, so groups overlap; the total row counts each record once)
-  const codes = state.lists.codes || {};
-  const GROUPS = [["บ.ล.15",["บ.ล.15"]],["บ.ล.15ก",["บ.ล.15ก"]],["บ.ล.15/ก",["บ.ล.15","บ.ล.15ก"]],["บ.ล.19",["บ.ล.19"]],["บ.ล.18",["บ.ล.18"]]];
-  const gBody = GROUPS.map(([label, cs]) => {
-    const members = acs.filter(a => cs.includes(codes[a]));
-    const t = totals(base.filter(r => members.includes(r.aircraft)));
-    return `<tr class="${t.n?"":"zero"}"><td><b>${esc(label)}</b><div class="muted" style="font-size:12.5px;white-space:normal">${members.map(esc).join(", ")||"-"}</div></td><td class="n">${fmt0(t.n)}</td><td class="n">${fmt0(t.flights)}</td><td class="n">${fmt1(t.hours)}</td><td class="n">${fmt0(t.pax)}</td><td class="n">${fmt0(t.cargo)}</td></tr>`; }).join("");
-  $("grpTbl").innerHTML = `<thead><tr><th>บ.แบบ</th><th class="n">รวมภารกิจ</th><th class="n">รวมเที่ยวบิน</th><th class="n">รวม ชม.บิน</th><th class="n">รวมผู้โดยสาร</th><th class="n">รวมพัสดุ/กก.</th></tr></thead>
-    <tbody>${gBody}<tr class="total"><td>รวมทุกลำ</td><td class="n">${fmt0(B.n)}</td><td class="n">${fmt0(B.flights)}</td><td class="n">${fmt1(B.hours)}</td><td class="n">${fmt0(B.pax)}</td><td class="n">${fmt0(B.cargo)}</td></tr></tbody>`;
+  renderSumx();
 
   $("listCount").textContent = `${rows.length} รายการ · ${rangeLabel()}`;
   if(!rows.length){
@@ -1200,7 +1303,7 @@ function render(){
       state.rows.length ? "ไม่มีรายการตรงกับตัวกรองที่เลือก" : `ยังไม่มีบันทึกในช่วง ${rangeLabel()} — ไปที่หน้า “บันทึกข้อมูล” เพื่อเพิ่มรายการ`;
     $("logTbl").innerHTML = `<tbody><tr><td class="empty">${msg}</td></tr></tbody>`; return;
   }
-  const canW = state.canWrite !== false;
+  const canW = canEdit(), canDel = isAdmin();
   $("logTbl").innerHTML = `<thead><tr><th class="n">วันที่</th><th>ประเภท</th><th>แบบ บ.</th><th>ภารกิจ</th><th>เส้นทางบิน</th><th class="n">ชม.บิน</th><th class="n">ผู้โดยสาร</th><th class="n">พัสดุ/กก.</th><th class="n">เที่ยวบิน</th><th>หมายเหตุ</th><th>ผู้บันทึก</th>${canW?"<th></th>":""}</tr></thead><tbody>` +
     rows.map(r => { const t = typeOf(r.type);
       return `<tr data-id="${esc(r.id)}" class="${r.id===state.editingId?"is-editing":""}"><td class="n">${r.day} ${esc(monthByKey(r._ym||r.ym).label)}</td>
@@ -1208,23 +1311,27 @@ function render(){
       <td>${esc(r.aircraft)}</td><td>${esc(r.mission)}</td><td>${esc(r.route)}${(()=>{ const u = (r.unknownAirports||[]).filter(a => !state.apIndex || !isKnownAirport(a)); /* re-checked against the current airport list */ return u.length ? ` <span style="color:var(--danger)" title="ไม่มีในฐานข้อมูล: ${esc(u.join(", "))}">⚠</span>` : ""; })()}</td>
       <td class="n">${r.hours!=null&&r.hours!==""?fmt1(r.hours):"-"}</td><td class="n">${r.pax?fmt0(r.pax):"-"}</td><td class="n">${r.cargo?fmt0(r.cargo):"-"}</td><td class="n">${r.flights?fmt0(r.flights):"-"}</td>
       <td>${esc(r.note)}${r.adminMsg?` <span title="ข้อความถึง ADMIN: ${esc(r.adminMsg)}">✉ ${esc(r.adminMsg)}</span>`:""}</td><td>${esc(r.recorder || state.names[r.by] || "")}</td>
-      ${canW?`<td><div class="row-actions" style="flex-wrap:nowrap"><button class="btn sm" data-act="edit" type="button">แก้ไข</button><button class="btn sm danger" data-act="del" type="button">ลบ</button></div></td>`:""}</tr>`; }).join("") +
+      ${canW?`<td><div class="row-actions" style="flex-wrap:nowrap"><button class="btn sm" data-act="edit" type="button">แก้ไข</button>${canDel?`<button class="btn sm danger" data-act="del" type="button">ลบ</button>`:""}</div></td>`:""}</tr>`; }).join("") +
     `</tbody><tbody><tr class="total"><td colspan="5">รวม</td><td class="n">${fmt1(T.hours)}</td><td class="n">${fmt0(T.pax)}</td><td class="n">${fmt0(T.cargo)}</td><td class="n">${fmt0(T.flights)}</td><td colspan="${canW?3:2}"></td></tr></tbody>`;
 }
 
 // ---------- page switch (บันทึกข้อมูล / ภาพรวม) ----------
 function adminNotice(){
-  if(!$("gate").hidden) return;      // shown after the entry password instead
+  if(!$("gate").hidden) return;      // shown after the access check instead
   ask({title:"⚠ ข้อมูลสำหรับนักบิน", tone:"warn", noCancel:true, okText:"รับทราบ",
     html:`<p style="margin:0;font-size:18px;line-height:1.6"><b>ข้อมูลในส่วนนี้สำหรับนักบินในการใช้งานข้อมูล</b><br><b style="color:var(--danger)">ห้ามทำการแก้ไข</b></p>`});
 }
+// สิทธิ์ของแต่ละหน้า (ผู้ใช้กำหนด 16 พ.ย. 2026): Viewer ดูภาพรวม · Editor + บันทึกข้อมูล · Admin + ADMIN DATA USING
+const VIEWS_OF = {Viewer:["report"], Editor:["entry","report"], Admin:["entry","report","admin"]};
+const allowedViews = () => VIEWS_OF[state.role] || [];
 function setView(v){
+  const ok = allowedViews(); if(state.role && !ok.includes(v)) v = ok.includes("entry") ? "entry" : "report";
   const was = state.view;
   state.view = v;
   $("views").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.view===v));
   $("formPanel").hidden = v!=="entry";
-  $("reportPanel").hidden = v!=="report"; $("settings").hidden = v!=="report";
-  if($("addYearBox")) $("addYearBox").hidden = v!=="report" || !window.LOGBOOK_ADMIN;
+  $("reportPanel").hidden = v!=="report";
+  if($("addYearBox")) $("addYearBox").hidden = !window.LOGBOOK_ADMIN;
   $("adminPanel").hidden = v!=="admin"; $("months").hidden = v==="admin";
   paintMonths();
   if(v==="admin" && typeof adEnsure==="function") adEnsure();
@@ -1256,7 +1363,7 @@ $("mOk").onclick = async () => {
   if(modalResolve.password){
     if(!$("mNameWrap").hidden && !$("mName").value.trim()){ $("mErr").textContent = "กรุณากรอก" + $("mNameLbl").textContent; $("mName").focus(); return; }
     const ok = await modalResolve.password($("mPass").value);
-    if(!ok){ $("mErr").textContent = "รหัสลบข้อมูลไม่ถูกต้อง"; $("mPass").select(); return; }
+    if(!ok){ $("mErr").textContent = "รหัส ADMIN ไม่ถูกต้อง"; $("mPass").select(); return; }
   }
   closeModal(true);
 };
@@ -1285,12 +1392,12 @@ $("logTbl").addEventListener("click", async e => {
     if(ok){ setView("entry"); selectMonth(monthByKey(row._ym||row.ym)); startEdit(row); }
     return;
   }
-  const ok = await ask({title:"ลบข้อมูลที่บันทึกไว้", tone:"danger", okText:"ลบข้อมูล", password: checkDeletePass, nameLabel:"ชื่อผู้ลบข้อมูล",
-    html:`<p style="margin:0 0 10px;color:var(--danger);font-weight:600">คำเตือน: ข้อมูลที่ลบแล้วจะกู้คืนไม่ได้ และจะหายจากรายงานของทุกคน</p>${recordInfo(row)}<p style="margin:10px 0 0">กรอกรหัสลบข้อมูลเพื่อยืนยัน</p>`});
+  if(!isAdmin()) return;
+  const ok = await ask({title:"ลบข้อมูลที่บันทึกไว้", tone:"danger", okText:"ลบข้อมูล", password: checkDeletePass,
+    html:`<p style="margin:0 0 10px;color:var(--danger);font-weight:600">คำเตือน: ข้อมูลที่ลบแล้วจะกู้คืนไม่ได้ และจะหายจากรายงานของทุกคน</p>${recordInfo(row)}<p style="margin:10px 0 0">ผู้ลบ: <b>${esc(meName())}</b> · กรอกรหัส ADMIN เพื่อยืนยัน</p>`});
   if(!ok) return;
   try{
-    try{ await state.db.collection("deletions").add({ym: row._ym||row.ym, entryId: id, entry: {...row}, deletedByName: state.lastModalName||"", deletedBy: state.myId||null, deletedAt: new Date().toISOString()}); }catch(e){}
-    await state.db.doc(`months/${row._ym||row.ym}/entries/${id}`).delete(); flash("expMsg","ลบรายการแล้ว (ผู้ลบ: "+(state.lastModalName||"-")+")","ok"); if(state.editingId===id) cancelEdit(); }
+    await state.db.doc(`months/${row._ym||row.ym}/entries/${id}`).delete(); flash("expMsg","ลบรายการแล้ว (ผู้ลบ: "+meName()+")","ok"); if(state.editingId===id) cancelEdit(); }
   catch(err){ flash("expMsg", "ลบไม่สำเร็จ: "+errText(err), "err"); }
 });
 
@@ -1407,9 +1514,8 @@ function startEdit(r){
   render(); window.scrollTo({top:0, behavior:"smooth"});
 }
 function cancelEdit(){
-  $("fRecorder").value = "";
   state.editingId = null; $("editTag").hidden = true; $("cancelEdit").hidden = true; $("saveBtn").textContent = "บันทึกข้อมูล";
-  ["fMission","fHours","fPax","fCargo","fFlights","fNote","fAdminMsg","fRecorder"].forEach(id=>$(id).value="");
+  ["fMission","fHours","fPax","fCargo","fFlights","fNote","fAdminMsg"].forEach(id=>$(id).value="");
   $("scopeDom").checked = true; lockFlights(true); setAirports([]);
   render();
 }
@@ -1423,7 +1529,7 @@ $("entryForm").addEventListener("submit", async e => {
   if(!state.db) return flash("formMsg","ยังเชื่อมต่อฐานข้อมูลไม่ได้ ต้องลงชื่อเข้าใช้ก่อน","err");
   const data = {
     day: +$("fDay").value, type: state.type, aircraft: $("fAircraft").value,
-    mission: $("fMission").value.trim(), airports: getAirports().filter(Boolean), recorder: $("fRecorder").value.trim(), scope: getScope(), flightsManual: !state.flightsLocked,
+    mission: $("fMission").value.trim(), airports: getAirports().filter(Boolean), rank: $("fRank").value.trim(), scope: getScope(), flightsManual: !state.flightsLocked,
     hours: numOrNull($("fHours").value), pax: numOrNull($("fPax").value), cargo: numOrNull($("fCargo").value), flights: numOrNull($("fFlights").value),
     note: $("fNote").value.trim(), adminMsg: $("fAdminMsg").value.trim(), ym: state.month.key,
   };
@@ -1442,7 +1548,7 @@ $("entryForm").addEventListener("submit", async e => {
   need(data.pax != null, "ผู้โดยสาร (ไม่มีใส่ 0)", $("fPax"));
   need(data.cargo != null, "พัสดุ/กก. (ไม่มีใส่ 0)", $("fCargo"));
   need(data.flights != null && data.flights > 0, "เที่ยวบิน", $("fFlights"));
-  need(!!data.recorder, "ชื่อผู้บันทึกข้อมูล", $("fRecorder"));
+  need(!!data.rank, "ยศ", $("fRank"));
   if(missing.length){
     flash("formMsg", "กรอกข้อมูลไม่ครบ: " + missing.join(", "), "err");
     await ask({title:"กรอกข้อมูลไม่ครบ", tone:"warn", okText:"กลับไปกรอก", noCancel:true,
@@ -1455,16 +1561,16 @@ $("entryForm").addEventListener("submit", async e => {
     const col = state.db.collection(`months/${state.month.key}/entries`);
     if(state.editingId){
       const old = state.rows.find(r=>r.id===state.editingId) || {};
-      await col.doc(state.editingId).set({...data, recorder: old.recorder || data.recorder, editedByName: data.recorder, by: old.by || state.myId || null, at: old.at || new Date().toISOString(), editedBy: state.myId||null, editedAt: new Date().toISOString()});
+      await col.doc(state.editingId).set({...data, at: old.at || new Date().toISOString()});
       flash("formMsg", `แก้ไขรายการวันที่ ${data.day} ${state.month.label} แล้ว`, "ok"); cancelEdit();
     } else {
-      await col.add({...data, by: state.myId||null, at: new Date().toISOString()});
+      await col.add({...data, at: new Date().toISOString()});
       flash("formMsg", `บันทึกแล้ว: วันที่ ${data.day} ${state.month.label} · ${data.mission}`, "ok");
-      ["fMission","fHours","fPax","fCargo","fFlights","fNote","fAdminMsg","fRecorder"].forEach(id=>$(id).value="");
+      try{ localStorage.setItem(RANK_KEY(), data.rank); }catch(e){}
+      ["fMission","fHours","fPax","fCargo","fFlights","fNote","fAdminMsg"].forEach(id=>$(id).value="");
       $("scopeDom").checked = true; lockFlights(true); setAirports([]);
     }
   }catch(err){
-    if(err && err.code==="invalid_argument" && state.canWrite==null){ state.canWrite=false; applyWrite(); }
     flash("formMsg", "บันทึกไม่สำเร็จ: "+errText(err), "err");
   }finally{ btn.disabled = false; }
 });
@@ -1485,13 +1591,11 @@ $("saveLists").onclick = async () => {
   const lists = {aircraft:parse("lsAircraft"), mission:parse("lsMission"), route:parse("lsRoute"), codes:{}};
   $("lsCodes").value.split("\n").forEach(line=>{ const i=line.lastIndexOf("="); if(i<0) return; const k=line.slice(0,i).trim(), v=line.slice(i+1).trim(); if(k&&v) lists.codes[k]=v; });
   if(!lists.aircraft.length) return flash("listMsg","ต้องมีแบบ บ. อย่างน้อย 1 รายการ","err");
-  if(window.LOGBOOK_STANDALONE){
-    const ok = await ask({title:"บันทึกรายการตัวเลือก", tone:"warn", okText:"บันทึก", password: checkDeletePass, nameLabel:"ชื่อผู้แก้ไขข้อมูล",
-      html:`<p style="margin:0">เฉพาะ ADMIN · กรอกชื่อและรหัส ADMIN เพื่อยืนยัน</p>`});
-    if(!ok) return; lists.updatedByName = state.lastModalName || "";
-  }
+  const ok = await ask({title:"บันทึกรายการตัวเลือก", tone:"warn", okText:"บันทึก", password: checkDeletePass,
+    html:`<p style="margin:0">เฉพาะ Admin · ผู้แก้ไข: <b>${esc(meName())}</b> · กรอกรหัส ADMIN เพื่อยืนยัน</p>`});
+  if(!ok) return;
   try{ await state.db.doc("config/lists").set(lists); flash("listMsg","บันทึกรายการตัวเลือกแล้ว","ok"); }
-  catch(err){ flash("listMsg", err&&err.code==="invalid_argument" ? "เฉพาะผู้ดูแล (Editor/Owner) แก้รายการตัวเลือกได้" : "บันทึกไม่สำเร็จ: "+errText(err), "err"); }
+  catch(err){ flash("listMsg", "บันทึกไม่สำเร็จ: "+errText(err), "err"); }
 };
 
 // ---------- names ----------
@@ -1851,12 +1955,12 @@ $("adSave").onclick = async () => {
   if(!state.db) return;
   const groups = {};
   document.querySelectorAll("#adAlloc .adfs").forEach(fs => { const A = readForm(fs); groups[fs.dataset.g] = {total: A.total==null?null:Math.max(0,A.total), training: A.training==null?null:Math.max(0,A.training), revisions: A.revisions}; });
-  const ok = await ask({title:"บันทึกชั่วโมงจัดสรร ปีงบ "+state.fy, tone:"warn", okText:"บันทึก", password: checkDeletePass, nameLabel:"ชื่อผู้แก้ไขข้อมูล",
-    html:`<p style="margin:0">ข้อมูลจัดสรรใช้คำนวณ % ในหน้านี้ทั้งหมด กรอกชื่อและรหัส ADMIN เพื่อยืนยัน</p>`});
+  const ok = await ask({title:"บันทึกชั่วโมงจัดสรร ปีงบ "+state.fy, tone:"warn", okText:"บันทึก", password: checkDeletePass,
+    html:`<p style="margin:0">ข้อมูลจัดสรรใช้คำนวณ % ในหน้านี้ทั้งหมด · ผู้แก้ไข: <b>${esc(meName())}</b> · กรอกรหัส ADMIN เพื่อยืนยัน</p>`});
   if(!ok) return;
-  try{ await state.db.doc(`adminalloc/fy${state.fy}`).set({fy: state.fy, version: 2, groups, updatedByName: state.lastModalName||"", updatedBy: state.myId||null, updatedAt: new Date().toISOString()});
+  try{ await state.db.doc(`adminalloc/fy${state.fy}`).set({fy: state.fy, version: 2, groups, updatedByName: meName(), updatedBy: state.myId||null, updatedAt: new Date().toISOString()});
     state.ad.dirty = false; flash("adMsg","บันทึกชั่วโมงจัดสรรแล้ว","ok"); }
-  catch(err){ flash("adMsg", err&&err.code==="invalid_argument" ? "เฉพาะผู้ดูแล (Editor/Owner) แก้ชั่วโมงจัดสรรได้" : "บันทึกไม่สำเร็จ: "+errText(err), "err"); }
+  catch(err){ flash("adMsg", "บันทึกไม่สำเร็จ: "+errText(err), "err"); }
 };
 
 // ---------- copy a table to Word / PowerPoint / Excel (keeps colours, borders, merged cells) ----------
@@ -2018,11 +2122,11 @@ if($("addYearBox")){
     if(!(fy>=2560 && fy<=2700)) return flash("nyMsg","ใส่ปีงบ เช่น 2571","err");
     if(!/docs\.google\.com\/spreadsheets\/d\//.test(src)) return flash("nyMsg","ใส่ลิงก์ไฟล์ต้นทาง (Google Sheet)","err");
     if(disp && !/docs\.google\.com\/spreadsheets\/d\//.test(disp)) return flash("nyMsg","ลิงก์ไฟล์แสดงผลไม่ถูกต้อง","err");
-    const ok = await ask({title:"เพิ่มปีงบ "+fy, tone:"warn", okText:"เพิ่มปีงบ", password: checkDeletePass, nameLabel:"ชื่อผู้เพิ่มปีงบ",
-      html:`<p style="margin:0">ระบบจะสร้างชีท 2–6 ในไฟล์ต้นทาง คัดลอกรายชื่อเครื่อง / รหัส บ.ล. / ภารกิจจากปีก่อน และตั้งไฟล์แสดงผลให้</p>`});
+    const ok = await ask({title:"เพิ่มปีงบ "+fy, tone:"warn", okText:"เพิ่มปีงบ", password: checkDeletePass,
+      html:`<p style="margin:0">ระบบจะสร้างชีท 2–6 ในไฟล์ต้นทาง คัดลอกรายชื่อเครื่อง / รหัส บ.ล. / ภารกิจจากปีก่อน และตั้งไฟล์แสดงผลให้ · กรอกรหัส ADMIN เพื่อยืนยัน</p>`});
     if(!ok) return;
     const btn = $("nyBtn"); btn.disabled = true; flash("nyMsg","กำลังตั้งค่าไฟล์… (อาจใช้เวลา 10–30 วินาที)","");
-    try{ const r = await window.LOGBOOK_ADMIN.addYear({fy, srcUrl: src, dispUrl: disp, byName: state.lastModalName||""});
+    try{ const r = await window.LOGBOOK_ADMIN.addYear({fy, srcUrl: src, dispUrl: disp});
       $("nyMsg").textContent = `✓ เพิ่มปีงบ ${r.fy} แล้ว (${r.name}) · ${r.display} · ช่องปีงบประมาณด้านบนเลือก ${r.fy} ได้แล้ว`; $("nyMsg").className = "msg ok";
       $("nySrc").value = ""; $("nyDisp").value = ""; $("nyFy").value = ""; showYears();
       if(![...fySel.options].some(o=>+o.value===r.fy)) fySel.insertAdjacentHTML("beforeend", `<option value="${r.fy}">${r.fy}</option>`);
@@ -2030,53 +2134,305 @@ if($("addYearBox")){
     finally{ btn.disabled = false; }
   };
 }
-// ---------- boot ----------
+// ---------- สรุปตามแบบ บ. / ตาม บ.แบบ แยกประเภทภารกิจ (ผู้ใช้ขอ 16 พ.ย. 2026) ----------
+// ช่วงข้อมูล: ตามช่วงวันที่ด้านบน หรือ ตามปีงบ (ตั้งแต่ปีงบ – ถึงปีงบ ปีงบที่ยังไม่จบนับถึงวันนี้)
+// นับทุกแบบ บ. ทุกประเภทเสมอ ไม่ใช้ตัวกรองแบบ บ. / ประเภท / ในต่างประเทศด้านบน · ปุ่มเลือก รวม / ในประเทศ / ต่างประเทศ ของตารางเอง
+const SX_T = ["dechochai","vip","training"];
+const SX_SCOPES = [["","รวมทั้งในประเทศและต่างประเทศ","รวมในและต่างประเทศ"],["domestic","ภารกิจในประเทศ","ในประเทศ"],["international","ภารกิจต่างประเทศ","ต่างประเทศ"]];
+const sx = {mode:"range", scope:"", fy1:null, fy2:null, fyRows:null, fyKey:"", fyAt:0};
+const z5 = () => [0,0,0,0,0], add5 = (a,b) => a.map((x,i)=>x+b[i]);
+const todayKey = () => dkey(`${now.getFullYear()}-${pad2(now.getMonth()+1)}`, now.getDate());
+function sxAircraft(rows){ const L = state.lists.aircraft; return [...L, ...[...new Set(rows.map(r=>r.aircraft))].filter(a=>a && !L.includes(a))]; }
+function sxAgg(rows, scope){
+  const o = {};
+  rows.forEach(r => { if(scope && scopeOf(r)!==scope) return; const k = SX_T.indexOf(r.type); if(k<0) return;
+    const a = (o[r.aircraft] ||= SX_T.map(z5)), x = a[k]; x[0]++; x[1]+=+r.flights||0; x[2]+=+r.hours||0; x[3]+=+r.pax||0; x[4]+=+r.cargo||0; });
+  return o;
+}
+// "AIRBUS 320 (03), AIRBUS 320 (05)" → "AIRBUS 320 (03), (05)"
+function sxShort(list){ const m = list.map(a => /^(.*?)\s*(\([^)]*\))$/.exec(a)); if(list.length>1 && m.every(x=>x && x[1]===m[0][1])) return `${m[0][1]} ${m.map(x=>x[2]).join(", ")}`; return list.join(", "); }
+function sxGroups(acs){
+  const codes = state.lists.codes || {}, of = cs => acs.filter(a => cs.includes(codes[a]));
+  return [["บ.ล.15",of(["บ.ล.15"])],["บ.ล.15ก",of(["บ.ล.15ก"])],["บ.ล.15/ก",of(["บ.ล.15","บ.ล.15ก"]),"บ.ล.15 + บ.ล.15ก"],["บ.ล.19",of(["บ.ล.19"])],["บ.ล.18",of(["บ.ล.18"])]]
+    .map(([g,ms,sub]) => ({label:g, sub: sub || sxShort(ms) || "-", members: ms}));
+}
+// the two tables of one scope: lines [{label, sub, v:[[5]×3]}] and the lines summed in the total row
+function sxTables(rows, scope){
+  const b = sxAgg(rows, scope), acs = sxAircraft(rows), V = a => b[a] || SX_T.map(z5);
+  const t1 = {head:"แบบ บ.", lines: acs.map(a => ({label:a, sub:"", v:V(a)}))}; t1.tot = t1.lines.map((_,i)=>i);
+  const gs = sxGroups(acs);
+  const t2 = {head:"บ.แบบ", lines: gs.map(g => ({label:g.label, sub:g.sub, v: SX_T.map((_,k)=>g.members.reduce((x,a)=>add5(x,V(a)[k]), z5()))}))};
+  t2.tot = [2,3,4];                              // บ.ล.15/ก + บ.ล.19 + บ.ล.18 (บ.ล.15/ก รวม บ.ล.15 และ บ.ล.15ก แล้ว ไม่นับซ้ำ)
+  const inGroups = new Set(gs.flatMap(g=>g.members)), other = acs.filter(a => !inGroups.has(a) && b[a]);
+  if(other.length){ t2.lines.push({label:"อื่น ๆ", sub: other.join(", "), v: SX_T.map((_,k)=>other.reduce((x,a)=>add5(x,V(a)[k]), z5()))}); t2.tot.push(t2.lines.length-1); }
+  return [t1, t2];
+}
+const sxF = (v,j) => j===2 ? (v ? (+v).toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1}) : "-") : (v ? Math.round(v).toLocaleString("en-US") : "-");
+function sxHtml(t){
+  const M = ["ภารกิจ","เที่ยวบิน","ชม.บิน","ผู้โดยสาร","พัสดุ/กก."];
+  let h = `<colgroup><col class="c0">${"<col>".repeat(20)}</colgroup><thead><tr><th rowspan="2" scope="col">${t.head}</th>` + ["รับ-ส่ง เดโชชัย","บุคคลสำคัญ","ฝึกบิน","รวม"].map(g=>`<th colspan="5" class="g0" scope="colgroup">${g}</th>`).join("") + `</tr><tr>` + [0,1,2,3].map(()=>M.map((m,j)=>`<th scope="col"${j?"":' class="g0"'}>${m}</th>`).join("")).join("") + `</tr></thead><tbody>`;
+  const G = SX_T.map(z5);
+  t.lines.forEach((ln,i) => { const sum = ln.v.reduce(add5, z5()); if(t.tot.includes(i)) ln.v.forEach((v,k)=>G[k]=add5(G[k],v));
+    h += `<tr><th scope="row">${esc(ln.label)}${ln.sub?`<small>${esc(ln.sub)}</small>`:""}</th>` + ln.v.map(v5=>v5.map((v,j)=>`<td${j?"":' class="g0"'}>${sxF(v,j)}</td>`).join("")).join("") + sum.map((v,j)=>`<td class="sc${j?"":" g0"}">${sxF(v,j)}</td>`).join("") + `</tr>`; });
+  const S5 = G.reduce(add5, z5());
+  return h + `<tr class="tot"><th scope="row">รวมทั้งหมด</th>` + G.map(g=>g.map((v,j)=>`<td${j?"":' class="g0"'}>${sxF(v,j)}</td>`).join("")).join("") + S5.map((v,j)=>`<td${j?"":' class="g0"'}>${sxF(v,j)}</td>`).join("") + `</tr></tbody>`;
+}
+function sxYears(){ return [...fySel.options].map(o=>+o.value).filter(Boolean).sort((a,b)=>a-b); }
+function sxFillFy(){
+  const ys = sxYears(), opts = ys.map(y=>`<option value="${y}">${y}</option>`).join("");
+  if($("sxFy1").options.length !== ys.length){ $("sxFy1").innerHTML = $("sxFy2").innerHTML = opts; }
+  if(!sx.fy1 || !ys.includes(sx.fy1)) sx.fy1 = state.fy; if(!sx.fy2 || !ys.includes(sx.fy2)) sx.fy2 = state.fy;
+  $("sxFy1").value = sx.fy1; $("sxFy2").value = sx.fy2;
+}
+const fyBounds = fy => { const ms = fyMonths(fy); return [dkey(ms[0].key,1), dkey(ms[11].key, ms[11].days)]; };
+const fyShortLabel = fy => { const ms = fyMonths(fy), end = fyBounds(fy)[1] > todayKey() ? null : ms[11];
+  return `1 ${ms[0].label} – ${end ? `${end.days} ${end.label}` : `${now.getDate()} ${monthByKey(`${now.getFullYear()}-${pad2(now.getMonth()+1)}`).label}`}`; };
+// rows of fiscal years fy1..fy2 (each up to today): read from the database month by month
+async function sxLoadFy(fy1, fy2){
+  const out = {};
+  for(let fy=fy1; fy<=fy2; fy++){
+    // all months at once: the database answers a whole fiscal year in one request
+    const snaps = await Promise.all(fyMonths(fy).map(m => state.db.collection(`months/${m.key}/entries`).get().then(snap => snap.docs.map(d=>({id:d.id,_ym:m.key,...d.data()})))));
+    const rows = snaps.flat();
+    const t = todayKey(); out[fy] = rows.filter(r => dkey(r._ym||r.ym, r.day) <= t);
+  }
+  return out;
+}
+function sxRangeRows(){ return filtered(state.rows, {...state, filterType:"all", filterScope:"all", filterAc:"all"}); }
+async function sxCurrent(){
+  if(sx.mode==="range") return {rows: sxRangeRows(), label: rangeLabel().replace(/^วันที่ /,""), byFy:null};
+  const a = Math.min(sx.fy1, sx.fy2), b = Math.max(sx.fy1, sx.fy2), key = `${a}-${b}`;
+  if(!state.db) return {rows:[], label:"", byFy:{}};
+  if(sx.fyKey !== key || !sx.fyRows || Date.now() - sx.fyAt > 60000){ sx.fyKey = key; sx.fyRows = await sxLoadFy(a, b); sx.fyAt = Date.now(); }
+  const rows = Object.values(sx.fyRows).flat();
+  const label = a===b ? `ปีงบ ${String(a).slice(2)} · ${fyShortLabel(a)}` : `ปีงบ ${String(a).slice(2)}–${String(b).slice(2)}`;
+  return {rows, label, byFy: sx.fyRows};
+}
+let sxSeq = 0;
+async function renderSumx(){
+  if(!$("sxTbl1")) return;
+  sxFillFy();
+  $("sxFyr").hidden = sx.mode!=="fy";
+  document.querySelectorAll("#sxMode button").forEach(x=>x.setAttribute("aria-pressed", String(x.dataset.mode===sx.mode)));
+  document.querySelectorAll("#sxScope button").forEach(x=>x.setAttribute("aria-pressed", String(x.dataset.s===sx.scope)));
+  const seq = ++sxSeq;
+  if(sx.mode==="fy" && (sx.fyKey !== `${Math.min(sx.fy1,sx.fy2)}-${Math.max(sx.fy1,sx.fy2)}` || !sx.fyRows)) $("sxRange").textContent = "กำลังรวบรวมข้อมูลทั้งปีงบ…";
+  let cur; try{ cur = await sxCurrent(); }catch(err){ if(seq===sxSeq) $("sxRange").textContent = "รวบรวมข้อมูลไม่สำเร็จ: "+errText(err); sx.fyRows = null; sx.fyKey = ""; return; }
+  if(seq !== sxSeq) return;
+  const [t1, t2] = sxTables(cur.rows, sx.scope);
+  $("sxTbl1").innerHTML = sxHtml(t1); $("sxTbl2").innerHTML = sxHtml(t2);
+  $("sxRange").textContent = `${cur.label} · ${SX_SCOPES.find(x=>x[0]===sx.scope)[2]}`;
+  $("sxNote").textContent = (sx.mode==="range" ? "ใช้ช่วงวันที่ด้านบน · " : "ปีงบที่ยังไม่จบนับถึงวันนี้ · เลือกหลายปีงบจะรวมยอดทุกปี · ") +
+    "ภารกิจ = จำนวนรายการที่บันทึก · นับทุกแบบ บ. และทุกประเภท (ไม่ใช้ตัวกรองด้านบน) · บ.ล.15/ก = บ.ล.15 + บ.ล.15ก รวมทั้งหมดของตาราง บ.แบบ = บ.ล.15/ก + บ.ล.19 + บ.ล.18 (ไม่นับซ้ำ)";
+}
+$("sxMode").addEventListener("click", e => { const x = e.target.closest("button"); if(x){ sx.mode = x.dataset.mode; renderSumx(); } });
+$("sxScope").addEventListener("click", e => { const x = e.target.closest("button"); if(x){ sx.scope = x.dataset.s; renderSumx(); } });
+$("sxFy1").onchange = () => { sx.fy1 = +$("sxFy1").value; renderSumx(); };
+$("sxFy2").onchange = () => { sx.fy2 = +$("sxFy2").value; renderSumx(); };
+
+// คัดลอกไป Excel: ตาราง HTML สีแบบไฟล์ Excel (+ ข้อความคั่นแท็บ) · ช่อง "-" วางเป็น 0 เพื่อคำนวณต่อ
+function sxClipHtml(t){
+  const c = t.cloneNode(true); c.querySelector("colgroup")?.remove();
+  c.setAttribute("style","border-collapse:collapse;font-family:'TH SarabunPSK';font-size:16pt");
+  c.querySelectorAll("th small").forEach(x=>x.replaceWith(" ("+x.textContent+")"));
+  const B = "border:.5pt solid #000;vertical-align:middle;";
+  c.querySelectorAll("thead th").forEach(x=>x.setAttribute("style", B+"background:#DCE6F1;font-weight:700;text-align:center;"));
+  c.querySelectorAll("tbody th").forEach(x=>x.setAttribute("style", B+"text-align:left;"+(x.closest("tr.tot")?"background:#FFF2CC;font-weight:700;":"")));
+  c.querySelectorAll("tbody td").forEach(x=>{ const tot = x.closest("tr.tot"), sc = x.classList.contains("sc"), hr = ([...x.parentNode.children].indexOf(x)-1)%5===2;
+    const v = x.textContent.replace(/,/g,""); x.textContent = v==="-" ? "0" : v;
+    x.setAttribute("style", B+"text-align:center;"+(tot?"background:#FFF2CC;font-weight:700;":sc?"background:#EDEDED;font-weight:700;":"")+`mso-number-format:'${hr?'#,##0.0;-#,##0.0;\\"-\\"':'#,##0;-#,##0;\\"-\\"'}'`); });
+  c.querySelectorAll("[class]").forEach(x=>x.removeAttribute("class")); c.removeAttribute("id");
+  return "<html><head><meta charset='utf-8'></head><body>"+c.outerHTML+"</body></html>";
+}
+function sxClipTsv(t){
+  const out = [];
+  t.querySelectorAll("tr").forEach((tr,r) => { out[r] = out[r] || []; let c = 0;
+    tr.querySelectorAll("th,td").forEach(x => { while(out[r][c]!==undefined) c++; const cs = +x.colSpan||1, rs = +x.rowSpan||1, sm = x.querySelector("small");
+      const tx = (sm ? x.firstChild.textContent+" ("+sm.textContent+")" : x.textContent).replace(/,/g,"").trim();
+      for(let i=0;i<rs;i++){ out[r+i] = out[r+i] || []; for(let k=0;k<cs;k++) out[r+i][c+k] = (i||k) ? "" : (tx==="-" ? "0" : tx); } c += cs; }); });
+  return out.map(r=>r.join("\t")).join("\n");
+}
+// คัดลอกเป็นรูป (PowerPoint / Word): วาดตารางลง canvas เอง สีและเส้นแบบไฟล์ Excel พื้นขาว ความละเอียด 2 เท่า
+async function sxPng(t, head){
+  try{ await document.fonts.ready; }catch(e){}
+  const FF = getComputedStyle(t.querySelector("td") || t).fontFamily, K = 2, rows = [...t.querySelectorAll("tr")], grid = [], cells = [];
+  rows.forEach((tr,r) => { grid[r] = grid[r] || []; let c = 0;
+    tr.querySelectorAll("th,td").forEach(x => { while(grid[r][c]) c++; const cs = x.colSpan||1, rs = x.rowSpan||1;
+      for(let i=0;i<rs;i++){ grid[r+i] = grid[r+i] || []; for(let k=0;k<cs;k++) grid[r+i][c+k] = 1; }
+      const sm = x.querySelector("small");
+      cells.push({r, c, cs, rs, txt: sm ? x.firstChild.textContent.trim() : x.textContent.trim(), sub: sm ? sm.textContent : "",
+        head: !!x.closest("thead"), lab: !x.closest("thead") && x.tagName==="TH", sc: x.classList.contains("sc"), tot: !!x.closest("tr.tot")}); c += cs; }); });
+  const W = [230, ...Array(20).fill(80)], X = [0]; W.forEach((w,i)=>X.push(X[i]+w));
+  const H = rows.map(tr => tr.querySelector("small") ? 54 : 36), Y = [0]; H.forEach((h,i)=>Y.push(Y[i]+h));
+  const P = 20, TT = 46, cw = X.at(-1)+P*2, ch = Y.at(-1)+P*2+TT;
+  const cv = document.createElement("canvas"); cv.width = cw*K; cv.height = ch*K; const g = cv.getContext("2d"); g.scale(K,K);
+  g.fillStyle = "#fff"; g.fillRect(0,0,cw,ch); g.fillStyle = "#000"; g.font = `700 26px ${FF}`; g.textBaseline = "middle";
+  g.fillText(`สรุปภารกิจ ฝูง.602 · ${head} · ${$("sxRange").textContent}`, P, P+16);
+  const ox = P, oy = P+TT;
+  cells.forEach(o => { const x = ox+X[o.c], y = oy+Y[o.r], w = X[o.c+o.cs]-X[o.c], h = Y[o.r+o.rs]-Y[o.r];
+    g.fillStyle = o.tot ? "#FFF2CC" : o.head ? "#DCE6F1" : o.sc ? "#EDEDED" : "#fff"; g.fillRect(x,y,w,h);
+    g.strokeStyle = "#000"; g.lineWidth = 1; g.strokeRect(x+.5, y+.5, w, h);
+    g.fillStyle = "#000"; g.font = `${o.head||o.sc||o.tot?700:400} 19px ${FF}`;
+    if(o.lab && !o.tot){ g.textAlign = "left";
+      if(o.sub){ g.fillText(o.txt, x+10, y+h/2-9); g.font = `400 15px ${FF}`; g.fillStyle = "#555"; g.fillText(o.sub, x+10, y+h/2+12); }
+      else g.fillText(o.txt, x+10, y+h/2+1); }
+    else { g.textAlign = "center"; g.fillText(o.txt, x+w/2, y+h/2+1); }
+    g.textAlign = "left"; });
+  g.lineWidth = 2.5; g.strokeStyle = "#000"; g.strokeRect(ox, oy, X.at(-1), Y.at(-1));
+  [1,6,11,16].forEach(c => { g.beginPath(); g.moveTo(ox+X[c], oy); g.lineTo(ox+X[c], oy+Y.at(-1)); g.stroke(); });
+  if(rows.at(-1).classList.contains("tot")){ const y = oy+Y[rows.length-1]; g.beginPath(); g.moveTo(ox,y); g.lineTo(ox+X.at(-1),y); g.stroke(); }
+  return await new Promise(r => cv.toBlob(r, "image/png"));
+}
+function sxShowImg(blob, b){
+  const u = URL.createObjectURL(blob), d = document.createElement("div"); d.className = "imgdlg";
+  d.innerHTML = `<div><b>คลิกขวาที่รูป → คัดลอกรูปภาพ แล้วไปวางใน PowerPoint หรือ Word</b><img alt="ตารางสรุป" src="${u}"><button class="cpy" type="button">ปิด</button></div>`;
+  d.addEventListener("click", e => { if(e.target===d || e.target.tagName==="BUTTON"){ d.remove(); URL.revokeObjectURL(u); b.focus(); } });
+  document.body.append(d);
+}
+document.querySelectorAll(".cpy").forEach(b => b.addEventListener("click", () => {
+  if(!canEdit()) return;
+  const t = $(b.dataset.t);
+  const done = (ok, msg) => { b.classList.toggle("ok", ok); b.textContent = msg; setTimeout(() => { b.classList.remove("ok"); b.textContent = b.dataset.l; }, 2500); };
+  if(b.classList.contains("cpy-img")){
+    const p = sxPng(t, b.dataset.h); b.textContent = "กำลังทำรูป…";
+    const fallback = () => p.then(bl => { done(false, b.dataset.l); sxShowImg(bl, b); });
+    try{ if(!window.ClipboardItem || !navigator.clipboard?.write) return fallback();
+      navigator.clipboard.write([new ClipboardItem({"image/png": p})]).then(() => done(true, "✓ คัดลอกรูปแล้ว วางใน PowerPoint / Word ได้เลย"), fallback); }
+    catch(e){ fallback(); }
+    return;
+  }
+  const html = sxClipHtml(t), tsv = sxClipTsv(t);
+  const ok = () => done(true, "✓ คัดลอกแล้ว วางใน Excel ได้เลย");
+  const sel = () => { try{ const r = document.createRange(); r.selectNode(t); const s = getSelection(); s.removeAllRanges(); s.addRange(r); const k = document.execCommand("copy"); s.removeAllRanges(); k ? ok() : done(false, "คัดลอกไม่ได้ ลากคลุมตารางแล้วกด Ctrl+C"); }catch(e){ done(false, "คัดลอกไม่ได้ ลากคลุมตารางแล้วกด Ctrl+C"); } };
+  try{
+    if(window.ClipboardItem && navigator.clipboard?.write) navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([html],{type:"text/html"}), "text/plain": new Blob([tsv],{type:"text/plain"})})]).then(ok, () => navigator.clipboard.writeText(tsv).then(ok, sel));
+    else if(navigator.clipboard?.writeText) navigator.clipboard.writeText(tsv).then(ok, sel); else sel();
+  }catch(e){ sel(); }
+}));
+
+// Export สรุปรายปีงบ (ตามแบบ บ.): ตามช่วงที่เลือกในตาราง · ตามปีงบ: แผ่นงานละปีงบ + แผ่นงานรวม (ถ้าเลือกหลายปี)
+function sxSheet(name, title, rows){
+  const blocks = []; let n = 1;
+  SX_SCOPES.forEach(([sc, label], i) => { const [t1, t2] = sxTables(rows, sc);
+    blocks.push({...t1, title:`ตารางที่ ${n++} · ตามแบบ บ. · ${label}`, brk: i>0}, {...t2, title:`ตารางที่ ${n++} · ตาม บ.แบบ · ${label}`}); });
+  const when = new Date().toLocaleString("th-TH",{day:"numeric",month:"short",year:"2-digit",hour:"2-digit",minute:"2-digit"});
+  return XG.summarySheet({name: sheetName(name), title, blocks: blocks.map(b => ({title:b.title, head:b.head, tot:b.tot, brk:b.brk, lines: b.lines.map(l => ({label:l.label, sub:l.sub, v:l.v}))})),
+    note: `ภารกิจ = จำนวนรายการที่บันทึก · บ.ล.15/ก = บ.ล.15 + บ.ล.15ก · ส่งออกจากเว็บ 602 LOG BOOK เมื่อ ${when} โดย ${meName()}`});
+}
+$("expSum").onclick = async () => {
+  if(!canEdit()) return;
+  const btn = $("expSum"); btn.disabled = true; flash("expMsg","กำลังรวบรวมข้อมูล…","");
+  try{
+    let sheets, file;
+    if(sx.mode==="range"){
+      const lab = rangeLabel().replace(/^วันที่ /,"");
+      sheets = [sxSheet(lab, `สรุปภารกิจ ฝูง.602 · ${lab}`, sxRangeRows())];
+      const f = state.rFrom, t = state.rTo, fm = monthByKey(f.key), tm = monthByKey(t.key);
+      file = `${stamp()}_602SUMMARY ${f.day} ${fm.label}-${t.day} ${tm.label}.xlsx`;
+    } else {
+      const cur = await sxCurrent(), a = Math.min(sx.fy1, sx.fy2), b = Math.max(sx.fy1, sx.fy2), yy = y => String(y).slice(2);
+      sheets = [];
+      for(let fy=a; fy<=b; fy++){
+        const open = fyBounds(fy)[1] > todayKey();
+        sheets.push(sxSheet(`ปีงบ ${yy(fy)}`, `สรุปภารกิจ ฝูง.602 · ปีงบ ${yy(fy)} (${fyShortLabel(fy)})${open?" · ยังไม่จบปีงบ นับถึงวันที่ส่งออก":""}`, cur.byFy[fy] || []));
+      }
+      if(b > a) sheets.push(sxSheet(`รวมปีงบ ${yy(a)}-${yy(b)}`, `สรุปภารกิจ ฝูง.602 · รวมปีงบ ${yy(a)}–${yy(b)}`, cur.rows));
+      file = `${stamp()}_602SUMMARY ปีงบ${yy(a)}${b>a?`-${yy(b)}`:""}.xlsx`;
+    }
+    await offer(file, sheets);
+  }catch(err){ flash("expMsg","รวบรวมข้อมูลไม่สำเร็จ: "+errText(err),"err"); }
+  finally{ btn.disabled = false; }
+};
+
+// ---------- สิทธิ์จากระบบ Login กลาง (Role ของเว็บนี้ WEB11) ----------
+// การตรวจจริงอยู่ที่ Apps Script ทุกคำขอ การซ่อนปุ่มในหน้าเว็บเป็นแค่ความสะดวก
+const canEdit = () => state.role==="Editor" || state.role==="Admin";
+const isAdmin = () => state.role==="Admin";
+const meName = () => state.me ? `${state.me.rank||""}${state.me.name||""}`.trim() || "-" : "-";
+const RANK_KEY = () => "airlog.rank:" + (state.me && state.me.name || "");
 function applyWrite(){
-  const ro = state.canWrite === false;
+  const ro = !canEdit();
   $("entryForm").querySelectorAll("input,select,button").forEach(el=>el.disabled = ro);
   $("fType").querySelectorAll("button").forEach(el=>el.disabled = ro);
-  if(ro) showStatus("บัญชีนี้ดูข้อมูลได้อย่างเดียว ถ้าต้องการบันทึก ให้ผู้ดูแลแชร์สิทธิ์ระดับ Contributor ขึ้นไป");
   render();
+}
+function applyMe(me){
+  state.me = me; state.role = me && me.role || ""; state.canWrite = canEdit();
+  $("who").textContent = me ? `ผู้ใช้งาน: ${meName()}` : "";
+  $("roleTag").hidden = !me; $("roleTag").textContent = state.role;
+  $("signOut").hidden = !window.App;
+  $("views").querySelectorAll("button").forEach(b => b.hidden = !allowedViews().includes(b.dataset.view));
+  $("views").hidden = allowedViews().length < 2;
+  // Export / คัดลอก: Editor ขึ้นไป (Viewer ดูอย่างเดียว ผู้ใช้กำหนด 16 พ.ย. 2026)
+  document.querySelectorAll(".needEdit").forEach(el => el.hidden = !canEdit());
+  $("fName").textContent = me ? (me.name || "-") : "-";
+  let r = ""; try{ r = localStorage.getItem(RANK_KEY()) || ""; }catch(e){}
+  if(!$("fRank").value) $("fRank").value = r || (me && me.rank) || "";
+  applyWrite();
+  let v = (location.hash||"").slice(1); if(!["entry","report","admin"].includes(v)){ try{ v = localStorage.getItem("airlog.view")||"entry"; }catch(e){ v="entry"; } }
+  setView(v);
+  if(typeof renderSumx==="function") renderSumx();
+}
+function showLock(msg, back){
+  $("gate").hidden = false; $("app").inert = true;
+  $("gateErr").textContent = msg || ""; $("gateErr").className = "msg" + (back ? " err" : ""); $("gateGo").hidden = !back;
+}
+function hideLock(){ $("gate").hidden = true; $("app").inert = false; }
+const AUTH = window.App || null;
+$("gateGo").onclick = () => { if(AUTH) location.href = AUTH.loginUrl().split("?")[0]; };
+$("signOut").onclick = () => { if(AUTH) AUTH.signOut(); };
+// บัญชีนี้ไม่มีสิทธิ์ใช้งานเว็บนี้ หรือเว็บถูกปิด (ข้อความจากระบบ Login)
+function denied(msg){ state.denied = true; showLock(msg || "บัญชีนี้ไม่มีสิทธิ์ใช้งานเว็บนี้ ให้ติดต่อ Admin", true); }
+window.addEventListener("logbook:denied", e => denied(e.detail));
+// Login หมดเวลา / Password ถูกเปลี่ยน / ถูกใช้ที่เครื่องอื่น: ถามระบบ Login เอง (ระบบ Login พาไปหน้าเข้าสู่ระบบพร้อมเหตุผล)
+let lastRenew = 0;
+async function onAuthLost(){
+  if(!AUTH || !AUTH.session()){ if(AUTH) AUTH.toLogin(); return; }
+  if(Date.now() - lastRenew < 30000) return; lastRenew = Date.now();
+  try{ await AUTH.api("me"); const me = await window.LOGBOOK_AUTH.renew(); if(me) applyMe(me); }catch(e){}
+}
+window.addEventListener("logbook:auth-lost", onAuthLost);
+// Role ของเว็บนี้ถูกลดลง (เช่น Editor → Viewer): ถามใหม่แล้วปรับหน้า
+window.addEventListener("logbook:forbidden", async e => { try{ const me = await window.LOGBOOK_AUTH.renew(); if(me) applyMe(me); }catch(x){} });
+async function startLogin(){
+  state.denied = false; showLock("กำลังตรวจสิทธิ์…");
+  let me = null;
+  try{ me = await window.LOGBOOK_AUTH.start(); }
+  catch(e){
+    if(e && (e.code==="no_web" || e.code==="web_closed" || e.code==="wrong_web")){ denied(e.message); return; }
+    if(e && e.code==="auth"){ if(!AUTH.session()){ AUTH.toLogin(); return; }
+      showLock("Apps Script ของเว็บนี้ยังเป็นโค้ดรุ่นเก่า: วาง Code.gs ใหม่ แล้ว Deploy → Manage deployments → New version", false); return; }
+    showLock(((e && e.message) || "ตรวจสิทธิ์ไม่สำเร็จ") + " · จะลองใหม่อีกครั้ง", false); setTimeout(startLogin, 15000); return;
+  }
+  if(state.denied) return;
+  if(!me){ showLock("โหลดข้อมูลไม่สำเร็จ จะลองใหม่อีกครั้ง", false); setTimeout(startLogin, 10000); return; }
+  hideLock(); applyMe(me);
+  if(state.view==="admin") adminNotice();
 }
 buildMonths(); fillLists(); selectMonth(defaultMonth());
 { const m = defaultMonth(); setRange({key:m.key,day:1},{key:m.key,day:m.days}); }
-// ---------- entry password: asked every time the page opens (not remembered) ----------
-const GATE_HASH = "2485cbb6668d679c127e0c0a59d474e991b31e2257a6e2f960027eb5fa3ec4a3";
-async function sha256hex(t){ const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,"0")).join(""); }
-setTimeout(()=>{ try{ $("gatePass").focus(); }catch(e){} }, 50);
-$("gateForm").addEventListener("submit", async e => {
-  e.preventDefault();
-  let ok = false; try{ ok = (await sha256hex($("gatePass").value)) === GATE_HASH; }catch(err){}
-  if(!ok){ $("gateErr").textContent = "รหัสเข้าใช้งานไม่ถูกต้อง"; $("gatePass").select(); return; }
-  window.__entryPass = $("gatePass").value; window.dispatchEvent(new Event("logbook:unlocked"));
-  $("gate").hidden = true; $("app").inert = false; $("gatePass").value = "";
-  if(state.view==="admin") adminNotice();
-});
-{ let v = (location.hash||"").slice(1); if(v!=="entry" && v!=="report" && v!=="admin"){ try{ v = localStorage.getItem("airlog.view")||"entry"; }catch(e){ v="entry"; } } setView(["report","admin"].includes(v)?v:"entry"); }
+if(!AUTH || !AUTH.hasBackend || !window.LOGBOOK_AUTH) showLock("ไม่พบระบบ Login กลาง (eadmin) หน้านี้จึงยังใช้งานไม่ได้", false);
+else if(!AUTH.session()) AUTH.toLogin();
+else {
+  // การ Login ของเบราว์เซอร์นี้เปลี่ยนในแท็บอื่น: ออกจากระบบ หรือบัญชีอื่นเข้ามา
+  AUTH.watch((s, was) => { if(!s){ AUTH.toLogin(); return; } if(was && s.token !== was) location.reload(); });
+  startLogin();
+}
 
 (async () => {
   const use = n => (window.claude && window.claude.use) ? window.claude.use(n).catch(()=>null) : Promise.resolve(null);
-  const [db, user, dl] = await Promise.all([use("db"), use("user"), use("downloads")]);
-  downloads = dl; state.user = user;
+  const [db, dl] = await Promise.all([use("db"), use("downloads")]);
+  downloads = dl;
   if(!db){
-    $("who").textContent = "ไม่ได้เชื่อมต่อฐานข้อมูล";
-    state.canWrite=false; applyWrite();
-    showStatus(window.LOGBOOK_STANDALONE ? "ยังไม่ได้ตั้งค่าฐานข้อมูล — ใส่ลิงก์ Web app ของ Apps Script ใน config.js" : "เปิดหน้านี้ใน claude.ai และลงชื่อเข้าใช้ เพื่อบันทึกและดูข้อมูลร่วมกัน", true); return;
+    showStatus("ยังไม่ได้ตั้งค่าฐานข้อมูล — ใส่ลิงก์ Web app ของ Apps Script ใน config.js", true); return;
   }
   state.db = db;
-  if(user){
-    try{ state.myId = await user.id(); }catch(e){}
-    try{ const me = await user.me(); $("who").textContent = me && me.name ? `ผู้บันทึก: ${me.name}` : "เชื่อมต่อแล้ว"; }catch(e){ $("who").textContent="เชื่อมต่อแล้ว"; }
-    try{ const cw = await user.can("data.write"); state.canWrite = cw; }catch(e){}
-    try{ if(!(await user.canEdit())) $("saveLists").disabled = true; }catch(e){}
-  } else $("who").textContent = "เชื่อมต่อแล้ว";
-  applyWrite();
   db.doc("config/airports").onSnapshot(s => { state.apItems = s.exists ? (s.data().items||[]) : null; if(state.apItems) buildApIndex(state.apItems); }, ()=>{});
   db.doc("config/lists").onSnapshot(s => {
     if(s.exists){ const d=s.data(); state.lists = {
       aircraft: (d.aircraft&&d.aircraft.length?d.aircraft:DEFAULT_LISTS.aircraft).slice(),
       mission:(d.mission||DEFAULT_LISTS.mission).slice(), route:(d.route||DEFAULT_LISTS.route).slice(), codes:{...(d.codes||DEFAULT_LISTS.codes)}}; }
-    fillLists(); if(state.apItems) buildApIndex(state.apItems); render(); renderAdmin();
+    fillLists(); if(state.apItems) buildApIndex(state.apItems); render(); renderAdmin(); if(typeof renderSumx==="function") renderSumx();
   }, ()=>{});
   subscribeRange();
   if(state.view==="admin") adEnsure();

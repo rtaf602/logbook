@@ -19,8 +19,12 @@ const CFG = {
   BACKUP_FOLDER_ID: '1x6iMd_fcg5wcBnKlR-4k9zHF9PLoa1wv',         // โฟลเดอร์ 602DB_สำรองรายวัน
   BACKUP_KEEP_DAYS: 30,
   BACKUP_HOUR: 2,                                                // สำรองทุกคืนเวลาประมาณ 02:00
-  // SHA-256 ของรหัส (ไม่เก็บรหัสจริงในโค้ด) — เปลี่ยนรหัส: ใส่ค่าใหม่ใน Script Properties ENTRY_HASH / ADMIN_HASH
-  ENTRY_HASH: '2485cbb6668d679c127e0c0a59d474e991b31e2257a6e2f960027eb5fa3ec4a3',
+  // ระบบ Login กลาง ฝูง.602 (repo rtaf602/eadmin): ที่อยู่ระบบหลังบ้าน = backendUrl ในไฟล์ eadmin/docs/assets/config.js
+  // เปลี่ยนที่อยู่ภายหลัง: ใส่ใน Script Properties LOGIN_URL แทนการแก้โค้ด
+  LOGIN_URL: 'https://script.google.com/macros/s/AKfycbyLo0HinJWok4wSKL7WB_kj_UNZGNa4KQcog4beN3TMLZvQLZdBhe7qzGfiGB7icE9_yw/exec',
+  WEB_CODE: 'WEB11',                 // รหัสเว็บนี้ในรายชื่อเว็บของหน้า Admin (ต้องตรงกับ WEB_CODE ใน config.js)
+  CHECK_SEC: 60,                     // อ่านอย่างเดียว: ถามระบบ Login ซ้ำทุก 60 วินาที / การบันทึกทุกครั้งถามใหม่เสมอ
+  // SHA-256 ของรหัส ADMIN (ไม่เก็บรหัสจริงในโค้ด) — เปลี่ยนรหัส: ใส่ค่าใหม่ใน Script Properties ADMIN_HASH
   ADMIN_HASH: '9f2b75a5b90c42ba4b8386b6555db2ebda000f035a03c6120f9e725c8bde4280',
   TZ: 'Asia/Bangkok',
 };
@@ -47,22 +51,32 @@ const HIST_COLS = ['ลำดับ', 'เวลาที่ทำรายก�
 const ALLOC_COLS = ['ปีงบ', 'กลุ่ม', 'แบบ บ. (กลุ่ม)', 'รายการ', 'ชนิดชั่วโมง', 'ได้รับเดือนที่\n(1=ต.ค. … 11=ส.ค.)', 'ชั่วโมง\n(ต้นปี = ยอดทั้งปี\nRevise = เพิ่ม/ลด)', 'ผู้บันทึก', 'เวลาบันทึก', 'หมายเหตุ'];
 
 // ======================= Web app =======================
-function doGet() { return json_({ ok: true, service: '602 LOG BOOK', years: Object.keys(registry_()).map(Number), time: new Date().toISOString() }); }
+function doGet() { return json_({ ok: true, service: '602 LOG BOOK', login: CFG.WEB_CODE, time: new Date().toISOString() }); }
+
+// สิทธิ์ (ผู้ใช้กำหนด 16 พ.ย. 2026) — Role ของเว็บนี้ (WEB11) มาจากระบบ Login กลาง ตรวจทุกคำขอ
+//   Viewer: ดูหน้าภาพรวมอย่างเดียว · Editor: + บันทึก / แก้ไขทุกรายการ · Admin: + ADMIN DATA USING
+//   Admin + รหัส ADMIN: ลบภารกิจ, ชั่วโมงจัดสรร / Revise, ตั้งค่ารายการตัวเลือก, เพิ่มปีงบ (วางลิงก์ไฟล์)
+// action ที่เปลี่ยนข้อมูลถามระบบ Login ใหม่ทุกครั้ง (ไม่ใช้คำตอบที่จำไว้)
+const FRESH = { me: 1, save: 1, delete: 1, setAlloc: 1, setLists: 1, addYear: 1 };
 
 function doPost(e) {
   let req = {};
   try { req = JSON.parse(e.postData.contents || '{}'); } catch (err) { return json_({ ok: false, error: 'คำขอไม่ถูกต้อง' }); }
   try {
-    if (!checkHash_(req.key, prop_('ENTRY_HASH', CFG.ENTRY_HASH))) return json_({ ok: false, code: 'auth', error: 'รหัสเข้าใช้งานไม่ถูกต้อง' });
-    const admin = () => { if (!checkHash_(req.admin, prop_('ADMIN_HASH', CFG.ADMIN_HASH))) throw httpErr_('auth', 'รหัส ADMIN ไม่ถูกต้อง'); };
+    const s = auth_(req.pass, !!FRESH[req.action]);
+    req.byName = s.who;                                    // ชื่อผู้ทำรายการ = ยศ + ชื่อ-สกุล ของบัญชีที่ Login ไม่ใช่ที่หน้าเว็บส่งมา
+    const edit = () => { if (!s.edit) throw httpErr_('forbidden', 'บัญชีนี้มีสิทธิ์ดูอย่างเดียว (Viewer) บันทึกหรือแก้ไขข้อมูลไม่ได้'); };
+    const adminRole = () => { if (!s.admin) throw httpErr_('forbidden', 'เฉพาะ Admin ของเว็บนี้'); };
+    const admin = () => { adminRole(); if (!checkHash_(req.admin, prop_('ADMIN_HASH', CFG.ADMIN_HASH))) throw httpErr_('admin_pass', 'รหัส ADMIN ไม่ถูกต้อง'); };
     const reg = registry_(), years = Object.keys(reg).map(Number).sort((a, b) => a - b), latest = years[years.length - 1];
     const fy = +req.fy || latest, has = !!reg[fy];
     switch (req.action) {
-      case 'years': return json_({ ok: true, years: years.map(y => ({ fy: y, src: url_(reg[y].src), disp: reg[y].disp ? url_(reg[y].disp) : '' })) });
+      case 'me': return json_({ ok: true, me: { name: s.name, rank: s.rank, role: s.role, super: s.super } });
+      case 'years': return json_({ ok: true, years: years.map(y => s.admin ? { fy: y, src: url_(reg[y].src), disp: reg[y].disp ? url_(reg[y].disp) : '' } : { fy: y }) });
       case 'entries': return json_({ ok: true, fy, registered: has, entries: has ? readEntries_(fy) : [] });
-      case 'save': need_(has, fy); return json_(withLock_(() => saveEntry_(fy, req)));
+      case 'save': edit(); need_(has, fy); return json_(withLock_(() => saveEntry_(fy, req, s)));
       case 'delete': admin(); need_(has, fy); return json_(withLock_(() => deleteEntry_(fy, req)));
-      case 'alloc': return json_({ ok: true, alloc: has ? readAlloc_(fy) : null });
+      case 'alloc': adminRole(); return json_({ ok: true, alloc: has ? readAlloc_(fy) : null });
       case 'setAlloc': admin(); need_(has, fy); return json_(withLock_(() => writeAlloc_(fy, req)));
       case 'lists': return json_({ ok: true, lists: readLists_(has ? fy : latest) });
       case 'setLists': admin(); return json_(withLock_(() => writeLists_(has ? fy : latest, req)));
@@ -90,7 +104,7 @@ function book_(fy) {
   return (BOOKS[fy] = SpreadsheetApp.openById(r.src));
 }
 function sheet_(fy, name) { const sh = book_(fy).getSheetByName(name); if (!sh) throw httpErr_('setup', 'ไฟล์ปีงบ ' + fy + ' ยังไม่มีชีท “' + name + '”'); return sh; }
-function need_(has, fy) { if (!has) throw httpErr_('nofy', 'ยังไม่ได้เพิ่มปีงบ ' + fy + ' — ADMIN เพิ่มได้ที่ ภาพรวม / สรุปข้อมูล → เพิ่มปีงบใหม่'); }
+function need_(has, fy) { if (!has) throw httpErr_('nofy', 'ยังไม่ได้เพิ่มปีงบ ' + fy + ' — ADMIN เพิ่มได้ที่ ADMIN DATA USING → เพิ่มปีงบใหม่'); }
 
 // ======================= ชีท 3: ภารกิจ =======================
 function readEntries_(fy) {
@@ -136,8 +150,11 @@ function entryToRow_(e, codes) {
   row[LOGC.airports] = JSON.stringify(e.airports || []);
   return row;
 }
-function saveEntry_(fy, req) {
+function saveEntry_(fy, req, s) {
   const e = Object.assign({}, req.data || {}); e.ym = req.ym || e.ym;
+  // ผู้บันทึก = ยศ (พิมพ์เองได้ ตั้งต้นจากระบบ Login) + ชื่อ-สกุล ของบัญชีที่ Login (หน้าเว็บแก้ชื่อไม่ได้)
+  const me = recorderOf_(e.rank, s); delete e.rank;
+  e.recorder = me; e.editedByName = me;
   if (!/^\d{4}-\d{2}$/.test(e.ym || '')) throw httpErr_('bad', 'เดือนไม่ถูกต้อง');
   const [y, m] = e.ym.split('-').map(Number);
   if (fyOf_(y, m) !== fy) throw httpErr_('bad', 'เดือน ' + e.ym + ' ไม่อยู่ในปีงบ ' + fy);
@@ -149,7 +166,7 @@ function saveEntry_(fy, req) {
   if (!e.airports || e.airports.length < 2 || e.airports.some(a => !String(a).trim())) miss.push('เส้นทางบิน');
   if (!(+e.hours > 0)) miss.push('ชม.บิน'); if (e.pax == null || e.pax === '') miss.push('ผู้โดยสาร');
   if (e.cargo == null || e.cargo === '') miss.push('พัสดุ/กก.'); if (!(+e.flights > 0)) miss.push('เที่ยวบิน');
-  if (!String(e.recorder || '').trim()) miss.push('ชื่อผู้บันทึกข้อมูล');
+  if (!String(s.name || '').trim()) miss.push('ชื่อผู้บันทึกข้อมูล (บัญชีนี้ไม่มีชื่อ-สกุลในระบบ Login)');
   if (miss.length) throw httpErr_('bad', 'กรอกข้อมูลไม่ครบ: ' + miss.join(', '));
   const codes = readLists_(fy).codes, sh = sheet_(fy, SH.LOG);
   const id = String(req.id || '');
@@ -157,7 +174,7 @@ function saveEntry_(fy, req) {
   if (id && at) {                                   // แก้ไข → บันทึกประวัติทีละช่อง
     const old = rowToEntry_(sh.getRange(at, 1, 1, LOG_COLS.length).getValues()[0]);
     e.id = id; e.recorder = old.recorder || e.recorder; e.at = old.at || e.at;
-    e.editedByName = e.editedByName || e.recorder; e.editedAt = new Date().toISOString();
+    e.editedByName = me; e.editedAt = new Date().toISOString();
     const newRow = entryToRow_(e, codes);
     sh.getRange(at, 1, 1, newRow.length).setValues([newRow]); formatLogRow_(sh, at);
     const changes = diff_(old, e);
@@ -491,4 +508,59 @@ function getBig_(cache, key) {
   const keys = Array.from({ length: n }, (_, i) => key + '_' + i), got = cache.getAll(keys);
   if (keys.some(k => got[k] == null)) return null;
   try { return JSON.parse(keys.map(k => got[k]).join('')); } catch (e) { return null; }
+}
+
+// ======================= ระบบ Login กลาง (repo rtaf602/eadmin) =======================
+/* หน้าเว็บขอ "บัตรผ่าน" (pass) ของเว็บนี้จากระบบ Login (App.enterWeb('WEB11')) แล้วส่งมากับทุกคำขอ
+   สคริปต์นี้ส่ง pass ไปถามระบบ Login (op web.check) ได้ ยศ ชื่อ-สกุล และ Role ของเว็บนี้
+   คำตอบเก็บใน cache ตาม CFG.CHECK_SEC เฉพาะคำขอที่อ่านอย่างเดียว ที่ cache เก็บแค่เครื่องหมายของ pass ไม่เก็บ pass */
+function loginUrl_() { return String(prop_('LOGIN_URL', CFG.LOGIN_URL) || '').trim(); }
+function loginUrlOk_(url) { return /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url); }
+function auth_(pass, fresh) {
+  pass = String(pass || '');
+  if (!pass || pass.length > 800) throw httpErr_('auth', 'ให้เข้าสู่ระบบ');
+  let w = '';
+  try { w = String(JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(pass.split('.')[0])).getDataAsString()).w || ''); } catch (x) { w = ''; }
+  if (w && w !== CFG.WEB_CODE) throw httpErr_('wrong_web', 'รหัสเว็บในไฟล์ config.js (' + w + ') ไม่ตรงกับ CFG.WEB_CODE ใน Apps Script (' + CFG.WEB_CODE + ') ให้แก้ให้ตรงกัน');
+  const key = sha256_('logbook|' + pass).slice(0, 32), cache = CacheService.getScriptCache();
+  if (!fresh) { const hit = cache.get('who:' + key); if (hit) return JSON.parse(hit); }
+  const url = loginUrl_();
+  if (!loginUrlOk_(url)) throw httpErr_('config', 'ยังไม่ได้ตั้งที่อยู่ระบบ Login (CFG.LOGIN_URL)');
+  let j = null;
+  try {
+    const res = UrlFetchApp.fetch(url, { method: 'post', contentType: 'text/plain;charset=utf-8', payload: JSON.stringify({ v: 1, op: 'web.check', pass: pass, web: CFG.WEB_CODE }), muteHttpExceptions: true, followRedirects: true });
+    j = JSON.parse(res.getContentText());
+  } catch (x) { j = null; }
+  if (!j || (!j.ok && !j.error)) throw httpErr_('busy', 'ตรวจสิทธิ์กับระบบ Login ไม่ได้ ลองอีกครั้ง');
+  if (!j.ok) {
+    cache.remove('who:' + key);
+    const c = String(j.error.code || '');
+    if (c === 'auth' || c === 'expired' || c === 'taken') throw httpErr_('auth', String(j.error.message || 'ให้เข้าสู่ระบบใหม่'));
+    if (c === 'no_web' || c === 'web_closed') throw httpErr_(c, String(j.error.message || 'บัญชีนี้ไม่มีสิทธิ์ใช้งานเว็บนี้ ให้ติดต่อ Admin'));
+    throw httpErr_('busy', String(j.error.message || 'ระบบ Login ขัดข้อง ลองอีกครั้ง'));
+  }
+  const u = j.user || {}, role = String(j.role || '');
+  const name = String(u.name || u.username || '').trim().slice(0, 80), rank = cleanRank_(u.rank);
+  const who = { name: name, rank: rank, who: (rank + name).trim(), role: role, edit: role === 'Admin' || role === 'Editor', admin: role === 'Admin', super: j.super === true };
+  const left = Math.floor((Number(j.expiresAt) - Date.now()) / 1000);
+  if (left > 1) cache.put('who:' + key, JSON.stringify(who), Math.min(CFG.CHECK_SEC, left));
+  return who;
+}
+// ยศที่ผู้ใช้พิมพ์ (ยศเปลี่ยนได้ตามเวลา ผู้ใช้สั่ง 16 พ.ย. 2026): ตัดช่องว่างหัวท้าย ไม่เกิน 30 ตัว ห้ามขึ้นต้นแบบสูตร
+function cleanRank_(v) { return String(v == null ? '' : v).replace(/[\r\n\t]/g, ' ').trim().replace(/^[=+\-@]+/, '').trim().slice(0, 30); }
+function recorderOf_(rank, s) { const r = rank == null || rank === '' ? s.rank : cleanRank_(rank); return (r + s.name).trim(); }
+function sha256_(t) {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, t, Utilities.Charset.UTF_8)
+    .map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+}
+/** เรียกครั้งเดียวจากหน้า Apps Script หลังวางโค้ดรุ่นนี้: ขอสิทธิ์เรียกเว็บภายนอก และตรวจว่าระบบ Login ตอบ */
+function setupLogin() {
+  const url = loginUrl_();
+  if (!loginUrlOk_(url)) throw new Error('CFG.LOGIN_URL ต้องเป็นที่อยู่ Web app ของระบบ Login (ขึ้นต้น https://script.google.com/macros/s/ ลงท้าย /exec)');
+  let ok = false;
+  try { ok = JSON.parse(UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true }).getContentText()).service === 'eadmin602'; } catch (x) { ok = false; }
+  if (!ok) throw new Error('ติดต่อระบบ Login ที่ ' + url + ' ไม่ได้ ตรวจ CFG.LOGIN_URL แล้วเรียก setupLogin อีกครั้ง');
+  PropertiesService.getScriptProperties().deleteProperty('ENTRY_HASH');   // รหัสเข้าเว็บเดิมไม่ใช้แล้ว
+  const msg = 'ระบบ Login ตอบแล้ว · รหัสเว็บนี้ ' + CFG.WEB_CODE + ' (ต้องตรงกับรายชื่อเว็บในหน้า Admin ของ E ADMIN)';
+  console.log(msg); return msg;
 }
