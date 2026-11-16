@@ -15,21 +15,52 @@
   const fyOfYm = ym => { const [y, m] = String(ym).split("-").map(Number); return m >= 10 ? y + 544 : y + 543; };
   const fail = (msg, code) => { const e = new Error(msg); e.code = code || "error"; e.fromServer = true; return e; };
 
-  // รอให้ผู้ใช้ใส่รหัสเข้าใช้งานก่อน (ทุกคำขอส่งรหัสไปให้เซิร์ฟเวอร์ตรวจ)
-  let unlock; const unlocked = new Promise(r => { unlock = r; });
-  window.addEventListener("logbook:unlocked", () => unlock());
+  // ระบบ Login กลาง ฝูง.602 (repo eadmin, window.App): ขอ "บัตรผ่าน" ของเว็บนี้ (WEB_CODE) แล้วส่ง pass ไปกับทุกคำขอ
+  // Apps Script ของเว็บนี้ถามระบบ Login เองว่าเป็นใคร (ยศ ชื่อ-สกุล) และมี Role อะไร ไม่ส่ง session ของ Login ไปที่นั่น
+  const AUTH = window.App || null, WEB = String(CFG.WEB_CODE || "WEB11");
+  let ready; const readyP = new Promise(r => { ready = r; });
+  let PASS = "", PASS_OF = "", ME = null;
+  const sess = () => { const s = AUTH && AUTH.session(); return s ? s.token : ""; };
+  async function getPass(force) {
+    const s = sess(); if (!s) throw fail("ให้เข้าสู่ระบบ", "auth");
+    if (!force && PASS && PASS_OF === s) return PASS;
+    if (force && AUTH.forgetPass) AUTH.forgetPass(WEB);
+    const r = await AUTH.enterWeb(WEB);           // ไม่มีสิทธิ์ / เว็บปิด: ระบบ Login ตอบ error (no_web, web_closed)
+    PASS = (r && r.pass) || ""; PASS_OF = s; return PASS;
+  }
+  const say = (name, detail) => setTimeout(() => window.dispatchEvent(new CustomEvent(name, { detail })), 0);
 
-  async function call(fy, action, payload) {
+  async function call(fy, action, payload, noWait) {
     if (!API) throw fail("ยังไม่ได้ตั้งค่าฐานข้อมูล (config.js)", "unavailable");
-    await unlocked;
-    const body = JSON.stringify(Object.assign({ action, fy: fy || undefined, key: window.__entryPass || "", admin: window.__adminPass || "" }, payload || {}));
+    if (!noWait) await readyP;
+    const body = JSON.stringify(Object.assign({ action, fy: fy || undefined, pass: PASS, admin: window.__adminPass || "" }, payload || {}));
     let res;
     try { res = await fetch(API, { method: "POST", body, redirect: "follow" }); }
     catch (e) { throw fail("เชื่อมต่อฐานข้อมูลไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่", "network"); }
     let j; try { j = await res.json(); } catch (e) { throw fail("ฐานข้อมูลตอบกลับไม่ถูกต้อง (ตรวจการ Deploy Web app)", "bad_response"); }
-    if (!j.ok) throw fail(j.error || "เกิดข้อผิดพลาด", j.code);
+    if (!j.ok) {
+      const c = j.code;
+      if (c === "auth") say("logbook:auth-lost");                                   // Login หมด / ถูกใช้ที่เครื่องอื่น
+      else if (c === "no_web" || c === "web_closed" || c === "wrong_web") say("logbook:denied", j.error);
+      else if (c === "forbidden") say("logbook:forbidden", j.error);
+      throw fail(j.error || "เกิดข้อผิดพลาด", c);
+    }
     return j;
   }
+  // หน้าเว็บเรียก start() หลังพบการ Login: ขอบัตรผ่าน แล้วถามว่าเป็นใคร (ยศ ชื่อ-สกุล Role) จาก Apps Script
+  window.LOGBOOK_AUTH = {
+    async start() {
+      await getPass(false);
+      let j;
+      try { j = await call(0, "me", null, true); }
+      catch (e) { if (e.code !== "auth") throw e; await getPass(true); j = await call(0, "me", null, true); }   // บัตรผ่านเก่าที่จำไว้
+      ME = j.me || null; ready(); return ME;
+    },
+    async renew() { await getPass(true); const j = await call(0, "me", null, true); ME = j.me || ME; return ME; },
+    me: () => ME,
+    // ประวัติการ Export / คัดลอก (ชีท 7 ของปีงบ fy): หน้าเว็บรอให้สำเร็จก่อนจึงให้ไฟล์ / คัดลอก
+    log(fy, o) { return call(fy, "logUse", o); },
+  };
 
   // ---------- ภารกิจ: โหลดทั้งปีงบครั้งเดียว แล้วแจกให้ทุกเดือนที่หน้าเว็บติดตามอยู่ ----------
   const FY = {};
