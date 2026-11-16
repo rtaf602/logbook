@@ -19,18 +19,18 @@
   // Apps Script ของเว็บนี้ถามระบบ Login เองว่าเป็นใคร (ยศ ชื่อ-สกุล) และมี Role อะไร ไม่ส่ง session ของ Login ไปที่นั่น
   const AUTH = window.App || null, WEB = String(CFG.WEB_CODE || "WEB11");
   let ready; const readyP = new Promise(r => { ready = r; });
-  let PASS = "", PASS_OF = "", ME = null;
+  let PASS = "", PASS_OF = "", ROLE = "", ME = null;
   const sess = () => { const s = AUTH && AUTH.session(); return s ? s.token : ""; };
   async function getPass(force) {
     const s = sess(); if (!s) throw fail("ให้เข้าสู่ระบบ", "auth");
     if (!force && PASS && PASS_OF === s) return PASS;
     if (force && AUTH.forgetPass) AUTH.forgetPass(WEB);
     const r = await AUTH.enterWeb(WEB);           // ไม่มีสิทธิ์ / เว็บปิด: ระบบ Login ตอบ error (no_web, web_closed)
-    PASS = (r && r.pass) || ""; PASS_OF = s; return PASS;
+    PASS = (r && r.pass) || ""; PASS_OF = s; ROLE = (r && r.role) || ""; return PASS;
   }
   const say = (name, detail) => setTimeout(() => window.dispatchEvent(new CustomEvent(name, { detail })), 0);
 
-  async function call(fy, action, payload, noWait) {
+  async function call(fy, action, payload, noWait, retried) {
     if (!API) throw fail("ยังไม่ได้ตั้งค่าฐานข้อมูล (config.js)", "unavailable");
     if (!noWait) await readyP;
     const body = JSON.stringify(Object.assign({ action, fy: fy || undefined, pass: PASS, admin: window.__adminPass || "" }, payload || {}));
@@ -40,6 +40,8 @@
     let j; try { j = await res.json(); } catch (e) { throw fail("ฐานข้อมูลตอบกลับไม่ถูกต้อง (ตรวจการ Deploy Web app)", "bad_response"); }
     if (!j.ok) {
       const c = j.code;
+      // บัตรผ่านที่จำไว้หมดอายุ: ขอใบใหม่จากระบบ Login แล้วลองซ้ำหนึ่งครั้ง ก่อนถือว่า Login หมด
+      if (c === "auth" && !retried && sess()) { try { await getPass(true); return await call(fy, action, payload, true, true); } catch (e) { if (e.code !== "auth") throw e; } }
       if (c === "auth") say("logbook:auth-lost");                                   // Login หมด / ถูกใช้ที่เครื่องอื่น
       else if (c === "no_web" || c === "web_closed" || c === "wrong_web") say("logbook:denied", j.error);
       else if (c === "forbidden") say("logbook:forbidden", j.error);
@@ -49,12 +51,16 @@
   }
   // หน้าเว็บเรียก start() หลังพบการ Login: ขอบัตรผ่าน แล้วถามว่าเป็นใคร (ยศ ชื่อ-สกุล Role) จาก Apps Script
   window.LOGBOOK_AUTH = {
-    async start() {
+    // early(role): บัตรผ่านที่ระบบ Login ให้มาบอก Role ของเว็บนี้อยู่แล้ว (เบราว์เซอร์จำบัตรผ่านไว้ตลอดชั่วโมงของการ Login)
+    // หน้าเว็บจึงแสดงหน้าตามสิทธิ์ได้ทันที แล้วค่อยเติมยศ ชื่อ-สกุล เมื่อ Apps Script ตอบ (Apps Script ยังตรวจทุกคำขอ)
+    async start(early) {
       await getPass(false);
-      let j;
-      try { j = await call(0, "me", null, true); }
-      catch (e) { if (e.code !== "auth") throw e; await getPass(true); j = await call(0, "me", null, true); }   // บัตรผ่านเก่าที่จำไว้
-      ME = j.me || null; ready(); return ME;
+      if (early && ROLE) { try { early({ role: ROLE }); } catch (e) { } }
+      // ข้อมูล (ภารกิจ รายการตัวเลือก สนามบิน) เริ่มโหลดพร้อมกับการถามว่าเป็นใคร ไม่ต้องรอกัน (หน้าเว็บเร็วขึ้น)
+      // Apps Script ตรวจบัตรผ่านกับระบบ Login ทุกคำขออยู่แล้ว
+      ready();
+      const j = await call(0, "me", null, true);
+      ME = j.me || null; return ME;
     },
     async renew() { await getPass(true); const j = await call(0, "me", null, true); ME = j.me || ME; return ME; },
     me: () => ME,

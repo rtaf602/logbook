@@ -1173,6 +1173,7 @@ function subscribeRange(){
   for(const k of keys){ if(state.subs[k]) continue;
     state.subs[k] = state.db.collection(`months/${k}/entries`).onSnapshot(snap => {
       state.mrows[k] = snap.docs.map(d => ({id:d.id, _ym:k, ...d.data()}));
+      if(!state.loaded){ state.loaded = true; if($("status").dataset.loading){ $("status").hidden = true; delete $("status").dataset.loading; } }
       rebuildRows(); render(); resolveNames();
     }, err => showStatus("โหลดข้อมูลไม่สำเร็จ ("+err.code+") ลองรีเฟรชหน้า", true));
   }
@@ -1297,9 +1298,9 @@ function render(){
 
   renderSumx();
 
-  $("listCount").textContent = `${rows.length} รายการ · ${rangeLabel()}`;
+  $("listCount").textContent = state.loaded ? `${rows.length} รายการ · ${rangeLabel()}` : `กำลังโหลดข้อมูล… · ${rangeLabel()}`;
   if(!rows.length){
-    const msg = !state.db ? "ยังเชื่อมต่อฐานข้อมูลไม่ได้" :
+    const msg = !state.db ? "ยังเชื่อมต่อฐานข้อมูลไม่ได้" : !state.loaded ? "กำลังโหลดข้อมูล…" :
       state.rows.length ? "ไม่มีรายการตรงกับตัวกรองที่เลือก" : `ยังไม่มีบันทึกในช่วง ${rangeLabel()} — ไปที่หน้า “บันทึกข้อมูล” เพื่อเพิ่มรายการ`;
     $("logTbl").innerHTML = `<tbody><tr><td class="empty">${msg}</td></tr></tbody>`; return;
   }
@@ -2395,7 +2396,7 @@ function applyWrite(){
 }
 function applyMe(me){
   state.me = me; state.role = me && me.role || ""; state.canWrite = canEdit();
-  $("who").textContent = me ? `ผู้ใช้งาน: ${meName()}` : "";
+  $("who").textContent = me && me.name ? `ผู้ใช้งาน: ${meName()}` : me ? "กำลังโหลดชื่อผู้ใช้งาน…" : "";
   $("roleTag").hidden = !me; $("roleTag").textContent = state.role;
   $("signOut").hidden = !window.App;
   $("views").querySelectorAll("button").forEach(b => b.hidden = !allowedViews().includes(b.dataset.view));
@@ -2434,7 +2435,7 @@ window.addEventListener("logbook:forbidden", async e => { try{ const me = await 
 async function startLogin(){
   state.denied = false; showLock("กำลังตรวจสิทธิ์…");
   let me = null;
-  try{ me = await window.LOGBOOK_AUTH.start(); }
+  try{ me = await window.LOGBOOK_AUTH.start(m0 => { if(state.denied) return; hideLock(); applyMe(m0); }); }
   catch(e){
     if(e && (e.code==="no_web" || e.code==="web_closed" || e.code==="wrong_web")){ denied(e.message); return; }
     if(e && e.code==="auth"){ if(!AUTH.session()){ AUTH.toLogin(); return; }
@@ -2443,8 +2444,9 @@ async function startLogin(){
   }
   if(state.denied) return;
   if(!me){ showLock("โหลดข้อมูลไม่สำเร็จ จะลองใหม่อีกครั้ง", false); setTimeout(startLogin, 10000); return; }
+  const first = !state.me || !state.me.name;
   hideLock(); applyMe(me);
-  if(state.view==="admin") adminNotice();
+  if(first && state.view==="admin" && $("modal").hidden) adminNotice();
 }
 buildMonths(); fillLists(); selectMonth(defaultMonth());
 { const m = defaultMonth(); setRange({key:m.key,day:1},{key:m.key,day:m.days}); }
@@ -2464,6 +2466,7 @@ else {
     showStatus("ยังไม่ได้ตั้งค่าฐานข้อมูล — ใส่ลิงก์ Web app ของ Apps Script ใน config.js", true); return;
   }
   state.db = db;
+  showStatus("กำลังโหลดข้อมูลภารกิจจากฐานข้อมูล… (ครั้งแรกหลังเปิดหน้าอาจใช้เวลาหลายวินาที)"); $("status").dataset.loading = "1";
   db.doc("config/airports").onSnapshot(s => { state.apItems = s.exists ? (s.data().items||[]) : null; if(state.apItems) buildApIndex(state.apItems); }, ()=>{});
   db.doc("config/lists").onSnapshot(s => {
     if(s.exists){ const d=s.data(); state.lists = {
