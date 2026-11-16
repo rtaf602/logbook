@@ -28,7 +28,7 @@ const CFG = {
   ADMIN_HASH: '9f2b75a5b90c42ba4b8386b6555db2ebda000f035a03c6120f9e725c8bde4280',
   TZ: 'Asia/Bangkok',
 };
-const SH = { HIST: '2 ประวัติแก้ไข-ลบ', LOG: '3 602YEAR_LOG BOOK', ALLOC: '4 ชั่วโมงจัดสรร', LISTS: '5 เครื่อง-รหัส-ภารกิจ', README: '6 อ่านก่อน' };
+const SH = { HIST: '2 ประวัติแก้ไข-ลบ', LOG: '3 602YEAR_LOG BOOK', ALLOC: '4 ชั่วโมงจัดสรร', LISTS: '5 เครื่อง-รหัส-ภารกิจ', README: '6 อ่านก่อน', USE: '7 ประวัติ Export-คัดลอก' };
 const HEAD_ROW = 4, FIRST = 5;   // แถวหัวตาราง / แถวข้อมูลแรก (แถว 1–2 เป็นชื่อชีทและคำอธิบาย)
 
 const TYPE_TH = { dechochai: 'เดโชชัย', vip: 'บุคคลสำคัญ', training: 'ฝึกบิน' };
@@ -48,6 +48,10 @@ const LOG_COLS = [
 const LOGC = Object.fromEntries(LOG_COLS.map((c, i) => [c[0], i]));
 const FIELD_TH = Object.fromEntries(LOG_COLS.map(c => [c[0], c[1].replace(/\n/g, ' ')]));
 const HIST_COLS = ['ลำดับ', 'เวลาที่ทำรายการ\n(เวลาไทย)', 'การกระทำ', 'รหัสรายการ\n(อ้างอิงชีท 3)', 'วันที่ภารกิจ', 'แบบ บ.', 'ประเภท', 'ช่องที่เปลี่ยน', 'ค่าก่อน', 'ค่าหลัง', 'ผู้ทำรายการ', 'เหตุผล / หมายเหตุ'];
+const USE_COLS = ['ลำดับ', 'เวลา\n(เวลาไทย)', 'Username', 'ยศ ชื่อ-สกุล', 'สิทธิ์ในเว็บ', 'การกระทำ', 'หน้า / ตาราง', 'ชื่อไฟล์', 'ช่วงข้อมูล'];
+// การกระทำที่บันทึกได้ (ปุ่ม Export และปุ่มคัดลอกทุกปุ่มของหน้าเว็บ) — ข้อความอื่นไม่รับ
+const USE_KINDS = ['Export Excel (ช่วงที่เลือก)', 'Export ทั้งปีงบ (แยกแท็บรายเดือน)', 'Export สรุปรายปีงบ (ตามแบบ บ.)', 'Export Excel ชั่วโมงบิน (ช่วงที่เลือก)', 'Export Excel ชั่วโมงบิน (ทั้งปีงบ)',
+  'คัดลอกตารางไป Excel', 'คัดลอกตารางเป็นรูป', 'คัดลอกตาราง', 'คัดลอกกราฟ', 'บันทึกกราฟเป็นรูป'];
 const ALLOC_COLS = ['ปีงบ', 'กลุ่ม', 'แบบ บ. (กลุ่ม)', 'รายการ', 'ชนิดชั่วโมง', 'ได้รับเดือนที่\n(1=ต.ค. … 11=ส.ค.)', 'ชั่วโมง\n(ต้นปี = ยอดทั้งปี\nRevise = เพิ่ม/ลด)', 'ผู้บันทึก', 'เวลาบันทึก', 'หมายเหตุ'];
 
 // ======================= Web app =======================
@@ -57,7 +61,7 @@ function doGet() { return json_({ ok: true, service: '602 LOG BOOK', login: CFG.
 //   Viewer: ดูหน้าภาพรวมอย่างเดียว · Editor: + บันทึก / แก้ไขทุกรายการ · Admin: + ADMIN DATA USING
 //   Admin + รหัส ADMIN: ลบภารกิจ, ชั่วโมงจัดสรร / Revise, ตั้งค่ารายการตัวเลือก, เพิ่มปีงบ (วางลิงก์ไฟล์)
 // action ที่เปลี่ยนข้อมูลถามระบบ Login ใหม่ทุกครั้ง (ไม่ใช้คำตอบที่จำไว้)
-const FRESH = { me: 1, save: 1, delete: 1, setAlloc: 1, setLists: 1, addYear: 1 };
+const FRESH = { me: 1, save: 1, delete: 1, setAlloc: 1, setLists: 1, addYear: 1, logUse: 1 };
 
 function doPost(e) {
   let req = {};
@@ -81,6 +85,8 @@ function doPost(e) {
       case 'lists': return json_({ ok: true, lists: readLists_(has ? fy : latest) });
       case 'setLists': admin(); return json_(withLock_(() => writeLists_(has ? fy : latest, req)));
       case 'addYear': admin(); return json_(withLock_(() => addYear_(req)));
+      // ทุกครั้งที่กด Export หรือคัดลอก (ผู้ใช้สั่ง 16 พ.ย. 2026): หน้าเว็บรอให้บันทึกสำเร็จก่อน จึงให้ไฟล์ / คัดลอก
+      case 'logUse': edit(); return json_(withLock_(() => logUse_(has ? fy : latest, req, s)));
       case 'airports': return json_({ ok: true, airports: readAirports_(!!req.refresh) });
       default: return json_({ ok: false, error: 'ไม่รู้จักคำสั่ง ' + req.action });
     }
@@ -398,6 +404,7 @@ function setupBook_(ss, fy, entries, alloc0, lists0, byName) {
   const lists = mk(SH.LISTS, 'ชีทที่ 5 · รายชื่อเครื่อง รหัส บ.ล. และรายชื่อภารกิจที่ใช้บ่อย', 'เว็บอ่านเมื่อเปิดหน้า และเขียนเมื่อ ADMIN บันทึกในหน้าตั้งค่า · เครื่องที่ปลดประจำการเปลี่ยน “ใช้งาน” เป็น ไม่ — อย่าลบแถว',
     ['ลำดับ', 'แบบ บ.\n(ชื่อที่แสดงในเว็บ)', 'รหัส บ.ล.', 'กลุ่มชั่วโมง\nจัดสรร', 'ใช้งาน', '', 'ลำดับ', 'ภารกิจที่ใช้บ่อย', '', 'ลำดับ', 'สนามบินเพิ่มเติม (ADMIN ยืนยันแล้ว)'], [7, 22, 11, 12, 9, 3, 7, 52, 3, 7, 34]);
   lists.getRange('F4').setBackground(null); lists.getRange('I4').setBackground(null); lists.getRange('D:D').setNumberFormat('@');
+  useSheet_(ss);
   readmeSheet_(ss, fy);
 
   if (log.getLastRow() < FIRST && entries && entries.length) {
@@ -422,7 +429,7 @@ function setupBook_(ss, fy, entries, alloc0, lists0, byName) {
 function setupDisplay_(dispId, srcId, fy) {
   if (!dispId) throw new Error('ไม่มีไฟล์แสดงผล');
   const ds = SpreadsheetApp.openById(dispId);
-  const tabs = [[SH.LOG, 'A1:V'], [SH.HIST, 'A1:L'], [SH.ALLOC, 'A1:O'], [SH.LISTS, 'A1:K']];
+  const tabs = [[SH.LOG, 'A1:V'], [SH.HIST, 'A1:L'], [SH.ALLOC, 'A1:O'], [SH.LISTS, 'A1:K'], [SH.USE, 'A1:I']];
   let note = ds.getSheetByName('อ่านก่อน');
   if (!note) {
     const first = ds.getSheets()[0];
@@ -449,7 +456,7 @@ function readmeSheet_(ss, fy) {
   const rows = [
     ['ชีทที่ 6 · คำอธิบาย วิธีกู้ข้อมูล และคำเตือน · ปีงบ ' + fy, ''], ['', ''],
     ['⚠ คำเตือน', ''],
-    ['ห้ามแก้ด้วยมือ', 'ชีท 2–5 เว็บเป็นผู้เขียน · ห้ามพิมพ์ ลบแถว แทรกแถว เรียงลำดับ เปลี่ยนชื่อชีท หรือย้ายคอลัมน์ · ต้องแก้ให้แก้ผ่านหน้าเว็บ (มีบันทึกในชีท 2)'],
+    ['ห้ามแก้ด้วยมือ', 'ชีท 2–5 และ 7 เว็บเป็นผู้เขียน · ห้ามพิมพ์ ลบแถว แทรกแถว เรียงลำดับ เปลี่ยนชื่อชีท หรือย้ายคอลัมน์ · ต้องแก้ให้แก้ผ่านหน้าเว็บ (มีบันทึกในชีท 2)'],
     ['ดูข้อมูล', 'ใช้ไฟล์ “แสดงผล” (ดึงด้วย IMPORTRANGE) หรือ Filter view ในไฟล์นี้ ไม่กระทบข้อมูล'],
     ['สำรองข้อมูล', 'ทุกคืนประมาณ 02:00 สคริปต์คัดลอกไฟล์นี้ไปโฟลเดอร์ 602DB_สำรองรายวัน เก็บ ' + CFG.BACKUP_KEEP_DAYS + ' วันล่าสุด'],
     ['📄 แต่ละชีท', ''],
@@ -458,6 +465,7 @@ function readmeSheet_(ss, fy) {
     ['ชีทที่ 3 602YEAR_LOG BOOK', '1 แถว = 1 ภารกิจ · รหัสรายการไม่ซ้ำ · คอลัมน์สุดท้าย (ซ่อน) ใช้โดยระบบ'],
     ['ชีทที่ 4 ชั่วโมงจัดสรร', 'ยอดต้นปี 1 แถวต่อกลุ่มต่อชนิดชั่วโมง + Revise 1 แถวต่อครั้ง'],
     ['ชีทที่ 5 เครื่อง-รหัส-ภารกิจ', 'เครื่อง รหัส บ.ล. กลุ่มชั่วโมงจัดสรร ภารกิจที่ใช้บ่อย และสนามบินที่ ADMIN เพิ่ม'],
+    ['ชีทที่ 7 ประวัติ Export-คัดลอก', '1 แถว = กด Export Excel หรือคัดลอกตาราง / กราฟ 1 ครั้ง · Username และ ยศ ชื่อ-สกุล มาจากระบบ Login กลาง · เว็บให้ไฟล์ / คัดลอกได้หลังบันทึกแถวนี้สำเร็จเท่านั้น'],
     ['🛟 วิธีกู้ข้อมูล', ''],
     ['รายการถูกลบผิด', 'ชีท 2 → กรองการกระทำ = ลบ → คัดลอก “ค่าก่อน” → แจ้ง ADMIN บันทึกกลับผ่านหน้าเว็บ'],
     ['ค่าถูกแก้ผิด', 'ชีท 2 → กรองรหัสรายการ → ดู “ค่าก่อน” → แก้กลับผ่านหน้าเว็บ'],
@@ -541,7 +549,7 @@ function auth_(pass, fresh) {
   }
   const u = j.user || {}, role = String(j.role || '');
   const name = String(u.name || u.username || '').trim().slice(0, 80), rank = cleanRank_(u.rank);
-  const who = { name: name, rank: rank, who: (rank + name).trim(), role: role, edit: role === 'Admin' || role === 'Editor', admin: role === 'Admin', super: j.super === true };
+  const who = { name: name, rank: rank, who: (rank + name).trim(), username: String(u.username || '').slice(0, 40), role: role, edit: role === 'Admin' || role === 'Editor', admin: role === 'Admin', super: j.super === true };
   const left = Math.floor((Number(j.expiresAt) - Date.now()) / 1000);
   if (left > 1) cache.put('who:' + key, JSON.stringify(who), Math.min(CFG.CHECK_SEC, left));
   return who;
@@ -561,6 +569,46 @@ function setupLogin() {
   try { ok = JSON.parse(UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true }).getContentText()).service === 'eadmin602'; } catch (x) { ok = false; }
   if (!ok) throw new Error('ติดต่อระบบ Login ที่ ' + url + ' ไม่ได้ ตรวจ CFG.LOGIN_URL แล้วเรียก setupLogin อีกครั้ง');
   PropertiesService.getScriptProperties().deleteProperty('ENTRY_HASH');   // รหัสเข้าเว็บเดิมไม่ใช้แล้ว
-  const msg = 'ระบบ Login ตอบแล้ว · รหัสเว็บนี้ ' + CFG.WEB_CODE + ' (ต้องตรงกับรายชื่อเว็บในหน้า Admin ของ E ADMIN)';
+  // ชีท 7 ประวัติ Export-คัดลอก ในไฟล์ต้นทางทุกปีงบ + แท็บเดียวกันในไฟล์แสดงผล (ไม่แตะข้อมูลในชีท 2–5)
+  const reg = registry_(), notes = [];
+  Object.keys(reg).forEach(y => {
+    try {
+      const ss = SpreadsheetApp.openById(reg[y].src); useSheet_(ss); readmeSheet_(ss, +y);
+      if (reg[y].disp) {
+        const ds = SpreadsheetApp.openById(reg[y].disp);
+        if (!ds.getSheetByName(SH.USE)) ds.insertSheet(SH.USE).getRange(1, 1).setFormula('=IMPORTRANGE("' + reg[y].src + '","\'' + SH.USE + '\'!A1:I")');
+      }
+      notes.push('ปีงบ ' + y + ': ชีท 7 พร้อม');
+    } catch (e) { notes.push('ปีงบ ' + y + ': ตั้งชีท 7 ไม่ได้ (' + e.message + ')'); }
+  });
+  const msg = 'ระบบ Login ตอบแล้ว · รหัสเว็บนี้ ' + CFG.WEB_CODE + ' (ต้องตรงกับรายชื่อเว็บในหน้า Admin ของ E ADMIN) · ' + notes.join(' · ');
   console.log(msg); return msg;
+}
+
+// ======================= ชีท 7: ประวัติ Export / คัดลอก =======================
+/** สร้างชีท 7 ถ้ายังไม่มี (ไฟล์ปีงบเดิมได้ชีทนี้ตอนบันทึกครั้งแรก หรือตอนเรียก setupLogin) ไม่แตะชีทอื่น */
+function useSheet_(ss) {
+  let sh = ss.getSheetByName(SH.USE);
+  if (sh && sh.getRange(HEAD_ROW, 1).getValue()) return sh;
+  if (!sh) sh = ss.insertSheet(SH.USE);
+  sh.getRange(1, 1).setValue('ชีทที่ 7 · ประวัติการ Export Excel และการคัดลอกตาราง / กราฟ').setFontFamily('TH SarabunPSK').setFontSize(20).setFontWeight('bold').setFontColor('#1F3864');
+  sh.getRange(2, 1).setValue('เว็บเขียนให้อัตโนมัติทุกครั้งที่กดปุ่ม Export หรือปุ่มคัดลอก · ชื่อและ Username มาจากระบบ Login กลาง · ห้ามแก้หรือลบแถวด้วยมือ')
+    .setFontFamily('TH SarabunPSK').setFontSize(14).setFontColor('#595959').setBackground('#FFF2CC').setWrap(false);
+  sh.getRange(HEAD_ROW, 1, 1, USE_COLS.length).setValues([USE_COLS]).setFontFamily('TH SarabunPSK').setFontSize(15).setFontWeight('bold')
+    .setFontColor('#FFFFFF').setBackground('#1F3864').setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
+  sh.setRowHeight(HEAD_ROW, 48); sh.setRowHeight(1, 34);
+  [7, 17, 14, 26, 11, 30, 40, 44, 26].forEach((w, i) => sh.setColumnWidth(i + 1, Math.round(w * 7.5)));
+  sh.setFrozenRows(HEAD_ROW);
+  return sh;
+}
+const clip_ = (v, n) => String(v == null ? '' : v).replace(/[\r\n\t]+/g, ' ').trim().replace(/^[=+\-@]+/, '').slice(0, n);
+function logUse_(fy, req, s) {
+  const kind = String(req.kind || '');
+  if (USE_KINDS.indexOf(kind) < 0) throw httpErr_('bad', 'ไม่รู้จักการกระทำ ' + kind);
+  const sh = useSheet_(book_(fy)), r = Math.max(sh.getLastRow() + 1, FIRST);
+  sh.getRange(r, 1, 1, USE_COLS.length).setValues([[r - FIRST + 1, new Date(), s.username || '', s.who, s.role, kind, clip_(req.where, 200), clip_(req.file, 200), clip_(req.range, 120)]]);
+  sh.getRange(r, 2).setNumberFormat('d mmm yy hh:mm:ss');
+  sh.getRange(r, 1, 1, USE_COLS.length).setFontFamily('TH SarabunPSK').setFontSize(15).setVerticalAlignment('middle');
+  SpreadsheetApp.flush();
+  return { ok: true, row: r };
 }

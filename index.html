@@ -1641,9 +1641,12 @@ function stamp(){ // YYMMDD_HHMMTHLT in Thai local time, Buddhist year
   const yy = String((+p.year + 543) % 100).padStart(2,"0"); const hh = p.hour==="24"?"00":p.hour;
   return `${yy}${p.month}${p.day}_${hh}${p.minute}THLT`;
 }
-async function offer(filename, sheets, msgId = "expMsg"){
+async function offer(filename, sheets, msgId = "expMsg", use = {}){
   if(!downloads) return flash(msgId,"หน้านี้ดาวน์โหลดไฟล์ไม่ได้ในมุมมองปัจจุบัน ลองเปิดใน claude.ai","err");
   let bytes; try{ bytes = XG.book(sheets); }catch(e){ console.error(e); return flash(msgId,"สร้างไฟล์ไม่สำเร็จ","err"); }
+  flash(msgId, "กำลังบันทึกประวัติการ Export…", "");
+  try{ await logUse(use.kind, use.where, filename, use.range); }
+  catch(err){ return flash(msgId, `${LOG_FAIL}ไฟล์ — ${errText(err)} ลองกดใหม่อีกครั้ง`, "err"); }
   try{ await downloads.save({filename, data: new Blob([bytes])}); flash(msgId,"ส่งออกไฟล์ "+filename+" แล้ว","ok"); }
   catch(err){ const c=err&&err.code; flash(msgId, c==="declined"?"ยกเลิกการดาวน์โหลด": c==="rate_limited"?"มีหน้าต่างดาวน์โหลดเปิดอยู่ รอสักครู่":"ดาวน์โหลดไม่สำเร็จ", c==="declined"?"":"err"); }
 }
@@ -1677,7 +1680,7 @@ async function exportRange(f, t, ms, fyLabel){
   }
   const fm = monthByKey(f.key), tm = monthByKey(t.key);
   const span = single ? `${f.day}-${Math.min(t.day,tm.days)} ${fm.label}` : `${f.day} ${fm.label}-${t.day} ${tm.label}`;
-  await offer(`${stamp()}_602LOG BOOK ${span}.xlsx`, sheets);
+  await offer(`${stamp()}_602LOG BOOK ${span}.xlsx`, sheets, "expMsg", {kind:"Export Excel (ช่วงที่เลือก)", where:"ภาพรวม / สรุปข้อมูล", range: `${f.day} ${fm.label} – ${Math.min(t.day,tm.days)} ${tm.label}${scopeTag()}`});
 }
 $("expYear").onclick = async () => {
   if(!state.db) return;
@@ -1690,7 +1693,7 @@ $("expYear").onclick = async () => {
       sheets.push(...formSheets(rows, m.label, "", ft=>sheetName(`${ft.short} ${m.label}`)));
       sheets.push(XG.listSheet(sheetName(`รายการทั้งเดือน ${m.label}`), `รายการบันทึกภารกิจ ประจำเดือน ${m.label}`, [...LIST_HDR, ...LIST_HDR_X], listRows(rows.sort(byDay), m.label), LIST_W, [8]));
     }
-    { const ms = fyMonths(state.fy); sheets.unshift(overviewSheetFor(yearRows, {key:ms[0].key,day:1}, {key:ms[11].key,day:ms[11].days})); await offer(`${stamp()}_602YEAR_LOG BOOK 1 ${ms[0].label}-${ms[11].days} ${ms[11].label}.xlsx`, sheets); }
+    { const ms = fyMonths(state.fy); sheets.unshift(overviewSheetFor(yearRows, {key:ms[0].key,day:1}, {key:ms[11].key,day:ms[11].days})); await offer(`${stamp()}_602YEAR_LOG BOOK 1 ${ms[0].label}-${ms[11].days} ${ms[11].label}.xlsx`, sheets, "expMsg", {kind:"Export ทั้งปีงบ (แยกแท็บรายเดือน)", where:"ภาพรวม / สรุปข้อมูล", range:`ปีงบ ${state.fy}`}); }
   }catch(err){ flash("expMsg","รวบรวมข้อมูลไม่สำเร็จ: "+errText(err),"err"); }
   finally{ btn.disabled=false; }
 };
@@ -1989,9 +1992,20 @@ function tableClipboard(tbl){
   const tsv = [...tbl.rows].map(r => [...r.cells].map(c => c.innerText.replace(/\s*\n\s*/g, " ").trim()).join("\t")).join("\n");
   return {html, tsv, fragment: clone.outerHTML};
 }
+function tableName(tbl){
+  if(tbl.id==="adTable") return "ตารางรายเดือน";
+  if(tbl.id==="ovTbl") return "ตารางภาพรวม";
+  const box = tbl.closest(".perf"), i = box ? [...box.parentNode.children].indexOf(box) : -1, g = AD_GROUPS[i] ? " · " + AD_GROUPS[i].label : "";
+  return (tbl.classList.contains("pf1") ? "ตารางผลการปฏิบัติตามแบบ บ." : tbl.classList.contains("pf2") ? "ชั่วโมงบินรักษาสมรรถภาพ" : "ตาราง") + g;
+}
 async function copyTable(tbl, btn){
+  if(btn.dataset.busy) return;
+  const label = btn.textContent;
   const {html, tsv, fragment} = tableClipboard(tbl);
-  const done = ok => { const t = btn.textContent; btn.textContent = ok ? "✓ คัดลอกแล้ว" : "คัดลอกไม่สำเร็จ"; btn.classList.toggle("ok", ok); setTimeout(() => { btn.textContent = t; btn.classList.remove("ok"); }, 2200); };
+  const done = (ok, msg) => { btn.textContent = msg || (ok ? "✓ คัดลอกแล้ว" : "คัดลอกไม่สำเร็จ"); btn.classList.toggle("ok", ok); delete btn.dataset.busy; setTimeout(() => { btn.textContent = label; btn.classList.remove("ok"); }, 2600); };
+  btn.dataset.busy = "1"; btn.textContent = "กำลังบันทึก…";
+  const logP = logUse("คัดลอกตาราง", "ADMIN DATA USING · " + tableName(tbl), "", adRangeText()); logP.catch(()=>{});
+  try{ await logP; }catch(err){ return done(false, LOG_FAIL + "คัดลอก ลองใหม่"); }
   try{
     if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
       await navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([html], {type:"text/html"}), "text/plain": new Blob([tsv], {type:"text/plain"})})]);
@@ -2052,18 +2066,26 @@ async function chartPng(chartEl){
 }
 async function copyChart(btn){
   const chartEl = btn.closest(".chartwrap").querySelector(".chart");
-  const label = btn.textContent, done = (t, ok) => { btn.textContent = t; btn.classList.toggle("ok", ok); setTimeout(() => { btn.textContent = label; btn.classList.remove("ok"); }, 2400); };
+  if(btn.dataset.busy) return;
+  const label = btn.textContent, done = (t, ok) => { btn.textContent = t; btn.classList.toggle("ok", ok); delete btn.dataset.busy; setTimeout(() => { btn.textContent = label; btn.classList.remove("ok"); }, 2600); };
+  const gname = AD_GROUPS.find(g=>g.key===state.ad.sel).label, where = "ADMIN DATA USING · กราฟชั่วโมงบิน · " + gname;
+  btn.dataset.busy = "1"; btn.textContent = "กำลังบันทึก…";
+  const logP = logUse("คัดลอกกราฟ", where, "", adRangeText()); logP.catch(()=>{});
   try{
     const pngPromise = chartPng(chartEl);
     if(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write){
-      await navigator.clipboard.write([new ClipboardItem({"image/png": pngPromise})]);
+      // the picture is handed over only after the history row is written (บันทึกไม่สำเร็จ = ไม่คัดลอก)
+      await navigator.clipboard.write([new ClipboardItem({"image/png": logP.then(() => pngPromise)})]);
       return done("✓ คัดลอกกราฟแล้ว", true);
     }
     throw new Error("no clipboard");
   }catch(e){
-    // clipboard refused (some app views): offer the picture as a file instead
+    try{ await logP; }catch(err){ return done(LOG_FAIL + "คัดลอก ลองใหม่", false); }
+    // clipboard refused (some app views): offer the picture as a file instead (logged as such)
     try{ const png = await chartPng(chartEl);
-      if(downloads){ await downloads.save({filename: `${stamp()}_กราฟชั่วโมงบิน_${AD_GROUPS.find(g=>g.key===state.ad.sel).label.split(" (")[0]}.png`, data: png}); return done("✓ บันทึกเป็นรูปแล้ว", true); }
+      if(downloads){ const fn = `${stamp()}_กราฟชั่วโมงบิน_${gname.split(" (")[0]}.png`;
+        try{ await logUse("บันทึกกราฟเป็นรูป", where, fn, adRangeText()); }catch(err){ return done(LOG_FAIL + "รูป ลองใหม่", false); }
+        await downloads.save({filename: fn, data: png}); return done("✓ บันทึกเป็นรูปแล้ว", true); }
     }catch(err){}
     done("คัดลอกไม่สำเร็จ", false);
   }
@@ -2101,7 +2123,7 @@ async function adExport(whole){
     monthLabel: ms[to].label, rangeLabel: `1 ${ms[0].label} - ${day} ${ms[to].label}`, groups});
   const fname = whole ? `${stamp()}_602YEAR_ADMIN ชั่วโมงบิน 1 ${ms[0].label}-${ms[11].days} ${ms[11].label}.xlsx`
                       : `${stamp()}_602ADMIN ชั่วโมงบิน 1 ${ms[from].label}-${day} ${ms[to].label}.xlsx`;
-  await offer(fname, [sum, ...groups.map(g=>g.sheet)], "adExpMsg");
+  await offer(fname, [sum, ...groups.map(g=>g.sheet)], "adExpMsg", {kind: whole ? "Export Excel ชั่วโมงบิน (ทั้งปีงบ)" : "Export Excel ชั่วโมงบิน (ช่วงที่เลือก)", where:"ADMIN DATA USING", range: whole ? `ปีงบ ${state.fy}` : adRangeText()});
 }
 $("adExpRange").onclick = () => adExport(false);
 $("adExpYear").onclick = () => adExport(true);
@@ -2290,24 +2312,29 @@ function sxShowImg(blob, b){
   document.body.append(d);
 }
 document.querySelectorAll(".cpy").forEach(b => b.addEventListener("click", () => {
-  if(!canEdit()) return;
+  if(!canEdit() || b.disabled) return;
   const t = $(b.dataset.t);
+  const where = `ภาพรวม · ${b.dataset.h} · ${SX_SCOPES.find(x=>x[0]===sx.scope)[2]}`, range = $("sxRange").textContent.split(" · ").slice(0,-1).join(" · ");
+  const logP = logUse(b.classList.contains("cpy-img") ? "คัดลอกตารางเป็นรูป" : "คัดลอกตารางไป Excel", where, "", range);
+  logP.catch(()=>{});
+  const failed = err => done(false, LOG_FAIL + "คัดลอก ลองใหม่");
   const done = (ok, msg) => { b.classList.toggle("ok", ok); b.textContent = msg; setTimeout(() => { b.classList.remove("ok"); b.textContent = b.dataset.l; }, 2500); };
   if(b.classList.contains("cpy-img")){
-    const p = sxPng(t, b.dataset.h); b.textContent = "กำลังทำรูป…";
-    const fallback = () => p.then(bl => { done(false, b.dataset.l); sxShowImg(bl, b); });
+    const p = sxPng(t, b.dataset.h); b.textContent = "กำลังบันทึกและทำรูป…";
+    const fallback = () => logP.then(() => p.then(bl => { done(false, b.dataset.l); sxShowImg(bl, b); }), failed);
     try{ if(!window.ClipboardItem || !navigator.clipboard?.write) return fallback();
-      navigator.clipboard.write([new ClipboardItem({"image/png": p})]).then(() => done(true, "✓ คัดลอกรูปแล้ว วางใน PowerPoint / Word ได้เลย"), fallback); }
+      navigator.clipboard.write([new ClipboardItem({"image/png": logP.then(() => p)})]).then(() => done(true, "✓ คัดลอกรูปแล้ว วางใน PowerPoint / Word ได้เลย"), () => logP.then(fallback, failed)); }
     catch(e){ fallback(); }
     return;
   }
-  const html = sxClipHtml(t), tsv = sxClipTsv(t);
+  const html = sxClipHtml(t), tsv = sxClipTsv(t); b.textContent = "กำลังบันทึก…";
   const ok = () => done(true, "✓ คัดลอกแล้ว วางใน Excel ได้เลย");
   const sel = () => { try{ const r = document.createRange(); r.selectNode(t); const s = getSelection(); s.removeAllRanges(); s.addRange(r); const k = document.execCommand("copy"); s.removeAllRanges(); k ? ok() : done(false, "คัดลอกไม่ได้ ลากคลุมตารางแล้วกด Ctrl+C"); }catch(e){ done(false, "คัดลอกไม่ได้ ลากคลุมตารางแล้วกด Ctrl+C"); } };
   try{
-    if(window.ClipboardItem && navigator.clipboard?.write) navigator.clipboard.write([new ClipboardItem({"text/html": new Blob([html],{type:"text/html"}), "text/plain": new Blob([tsv],{type:"text/plain"})})]).then(ok, () => navigator.clipboard.writeText(tsv).then(ok, sel));
-    else if(navigator.clipboard?.writeText) navigator.clipboard.writeText(tsv).then(ok, sel); else sel();
-  }catch(e){ sel(); }
+    if(window.ClipboardItem && navigator.clipboard?.write) navigator.clipboard.write([new ClipboardItem({"text/html": logP.then(() => new Blob([html],{type:"text/html"})), "text/plain": logP.then(() => new Blob([tsv],{type:"text/plain"}))})])
+      .then(ok, () => logP.then(() => navigator.clipboard.writeText(tsv).then(ok, sel), failed));
+    else logP.then(() => navigator.clipboard?.writeText ? navigator.clipboard.writeText(tsv).then(ok, sel) : sel(), failed);
+  }catch(e){ logP.then(sel, failed); }
 }));
 
 // Export สรุปรายปีงบ (ตามแบบ บ.): ตามช่วงที่เลือกในตาราง · ตามปีงบ: แผ่นงานละปีงบ + แผ่นงานรวม (ถ้าเลือกหลายปี)
@@ -2339,10 +2366,20 @@ $("expSum").onclick = async () => {
       if(b > a) sheets.push(sxSheet(`รวมปีงบ ${yy(a)}-${yy(b)}`, `สรุปภารกิจ ฝูง.602 · รวมปีงบ ${yy(a)}–${yy(b)}`, cur.rows));
       file = `${stamp()}_602SUMMARY ปีงบ${yy(a)}${b>a?`-${yy(b)}`:""}.xlsx`;
     }
-    await offer(file, sheets);
+    await offer(file, sheets, "expMsg", {kind:"Export สรุปรายปีงบ (ตามแบบ บ.)", where:"ภาพรวม · สรุปตามแบบ บ. / บ.แบบ", range: sx.mode==="range" ? rangeLabel().replace(/^วันที่ /,"") : `ปีงบ ${Math.min(sx.fy1,sx.fy2)}${sx.fy1!==sx.fy2?`–${Math.max(sx.fy1,sx.fy2)}`:""}`});
   }catch(err){ flash("expMsg","รวบรวมข้อมูลไม่สำเร็จ: "+errText(err),"err"); }
   finally{ btn.disabled = false; }
 };
+
+// ---------- ประวัติการ Export / คัดลอก (ผู้ใช้สั่ง 16 พ.ย. 2026) ----------
+// ทุกปุ่ม Export และทุกปุ่มคัดลอกบันทึกลงชีท 7 ของปีงบที่เลือกอยู่ (Username, ยศ ชื่อ-สกุล, เวลา, ทำอะไร) ก่อน
+// บันทึกไม่สำเร็จ = ไม่ให้ไฟล์ / ไม่คัดลอก (ผู้ใช้เลือกแบบ ข) · ชื่อและ Username Apps Script ตั้งเองจากระบบ Login
+const LOG_FAIL = "บันทึกประวัติการใช้งานไม่สำเร็จ จึงยังไม่ได้";
+function logUse(kind, where, file, range){
+  if(!window.LOGBOOK_AUTH || !window.LOGBOOK_AUTH.log) return Promise.reject(new Error("ไม่พบระบบบันทึกประวัติ"));
+  return window.LOGBOOK_AUTH.log(state.fy, {kind, where: where||"", file: file||"", range: range||""});
+}
+const adRangeText = () => { const ms = adMonths(); return state.ad.to==null ? "" : `ปีงบ ${state.fy} · 1 ${ms[0].label} – ${Math.min(state.ad.day||31, ms[state.ad.to].days)} ${ms[state.ad.to].label}`; };
 
 // ---------- สิทธิ์จากระบบ Login กลาง (Role ของเว็บนี้ WEB11) ----------
 // การตรวจจริงอยู่ที่ Apps Script ทุกคำขอ การซ่อนปุ่มในหน้าเว็บเป็นแค่ความสะดวก

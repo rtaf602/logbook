@@ -58,6 +58,8 @@
     },
     async renew() { await getPass(true); const j = await call(0, "me", null, true); ME = j.me || ME; return ME; },
     me: () => ME,
+    // ประวัติการ Export / คัดลอก (ชีท 7 ของปีงบ fy): หน้าเว็บรอให้สำเร็จก่อนจึงให้ไฟล์ / คัดลอก
+    log(fy, o) { return call(fy, "logUse", o); },
   };
 
   // ---------- ภารกิจ: โหลดทั้งปีงบครั้งเดียว แล้วแจกให้ทุกเดือนที่หน้าเว็บติดตามอยู่ ----------
