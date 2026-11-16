@@ -19,14 +19,14 @@
   // Apps Script ของเว็บนี้ถามระบบ Login เองว่าเป็นใคร (ยศ ชื่อ-สกุล) และมี Role อะไร ไม่ส่ง session ของ Login ไปที่นั่น
   const AUTH = window.App || null, WEB = String(CFG.WEB_CODE || "WEB11");
   let ready; const readyP = new Promise(r => { ready = r; });
-  let PASS = "", PASS_OF = "", ME = null;
+  let PASS = "", PASS_OF = "", ROLE = "", ME = null;
   const sess = () => { const s = AUTH && AUTH.session(); return s ? s.token : ""; };
   async function getPass(force) {
     const s = sess(); if (!s) throw fail("ให้เข้าสู่ระบบ", "auth");
     if (!force && PASS && PASS_OF === s) return PASS;
     if (force && AUTH.forgetPass) AUTH.forgetPass(WEB);
     const r = await AUTH.enterWeb(WEB);           // ไม่มีสิทธิ์ / เว็บปิด: ระบบ Login ตอบ error (no_web, web_closed)
-    PASS = (r && r.pass) || ""; PASS_OF = s; return PASS;
+    PASS = (r && r.pass) || ""; PASS_OF = s; ROLE = (r && r.role) || ""; return PASS;
   }
   const say = (name, detail) => setTimeout(() => window.dispatchEvent(new CustomEvent(name, { detail })), 0);
 
@@ -51,8 +51,11 @@
   }
   // หน้าเว็บเรียก start() หลังพบการ Login: ขอบัตรผ่าน แล้วถามว่าเป็นใคร (ยศ ชื่อ-สกุล Role) จาก Apps Script
   window.LOGBOOK_AUTH = {
-    async start() {
+    // early(role): บัตรผ่านที่ระบบ Login ให้มาบอก Role ของเว็บนี้อยู่แล้ว (เบราว์เซอร์จำบัตรผ่านไว้ตลอดชั่วโมงของการ Login)
+    // หน้าเว็บจึงแสดงหน้าตามสิทธิ์ได้ทันที แล้วค่อยเติมยศ ชื่อ-สกุล เมื่อ Apps Script ตอบ (Apps Script ยังตรวจทุกคำขอ)
+    async start(early) {
       await getPass(false);
+      if (early && ROLE) { try { early({ role: ROLE }); } catch (e) { } }
       // ข้อมูล (ภารกิจ รายการตัวเลือก สนามบิน) เริ่มโหลดพร้อมกับการถามว่าเป็นใคร ไม่ต้องรอกัน (หน้าเว็บเร็วขึ้น)
       // Apps Script ตรวจบัตรผ่านกับระบบ Login ทุกคำขออยู่แล้ว
       ready();

@@ -612,3 +612,18 @@ function logUse_(fy, req, s) {
   SpreadsheetApp.flush();
   return { ok: true, row: r };
 }
+
+// ======================= ปลุกสคริปต์ไว้ (แบบเดียวกับระบบ Login กลาง eadmin, ผู้ใช้สั่ง 16 พ.ย. 2026) =======================
+/* Apps Script ที่ไม่มีคนเรียกนาน ๆ จะ "หลับ" คำขอแรกหลังจากนั้นช้าหลายวินาที นาฬิกา keepWarm ทำงานทุก 5 นาทีให้สคริปต์ตื่นอยู่
+   ไม่อ่าน ไม่เขียนชีท (อ่านแค่ Script Properties) · เปิดด้วย startKeepWarm (ครั้งเดียว) ปิดด้วย stopKeepWarm · ไม่แตะนาฬิกา dailyBackup */
+function keepWarm() { registry_(); loginUrl_(); }
+function startKeepWarm() {
+  stopKeepWarm();
+  ScriptApp.newTrigger('keepWarm').timeBased().everyMinutes(5).create();
+  const msg = 'ตั้งนาฬิกาปลุกสคริปต์แล้ว: keepWarm ทำงานทุก 5 นาที (ปิดได้ด้วย stopKeepWarm)'; console.log(msg); return msg;
+}
+function stopKeepWarm() {
+  let n = 0;
+  ScriptApp.getProjectTriggers().forEach(t => { if (t.getHandlerFunction() === 'keepWarm') { ScriptApp.deleteTrigger(t); n++; } });
+  return 'ลบนาฬิกา keepWarm ' + n + ' รายการ';
+}

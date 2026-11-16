@@ -2396,7 +2396,7 @@ function applyWrite(){
 }
 function applyMe(me){
   state.me = me; state.role = me && me.role || ""; state.canWrite = canEdit();
-  $("who").textContent = me ? `ผู้ใช้งาน: ${meName()}` : "";
+  $("who").textContent = me && me.name ? `ผู้ใช้งาน: ${meName()}` : me ? "กำลังโหลดชื่อผู้ใช้งาน…" : "";
   $("roleTag").hidden = !me; $("roleTag").textContent = state.role;
   $("signOut").hidden = !window.App;
   $("views").querySelectorAll("button").forEach(b => b.hidden = !allowedViews().includes(b.dataset.view));
@@ -2435,7 +2435,7 @@ window.addEventListener("logbook:forbidden", async e => { try{ const me = await 
 async function startLogin(){
   state.denied = false; showLock("กำลังตรวจสิทธิ์…");
   let me = null;
-  try{ me = await window.LOGBOOK_AUTH.start(); }
+  try{ me = await window.LOGBOOK_AUTH.start(m0 => { if(state.denied) return; hideLock(); applyMe(m0); }); }
   catch(e){
     if(e && (e.code==="no_web" || e.code==="web_closed" || e.code==="wrong_web")){ denied(e.message); return; }
     if(e && e.code==="auth"){ if(!AUTH.session()){ AUTH.toLogin(); return; }
@@ -2444,8 +2444,9 @@ async function startLogin(){
   }
   if(state.denied) return;
   if(!me){ showLock("โหลดข้อมูลไม่สำเร็จ จะลองใหม่อีกครั้ง", false); setTimeout(startLogin, 10000); return; }
+  const first = !state.me || !state.me.name;
   hideLock(); applyMe(me);
-  if(state.view==="admin") adminNotice();
+  if(first && state.view==="admin" && $("modal").hidden) adminNotice();
 }
 buildMonths(); fillLists(); selectMonth(defaultMonth());
 { const m = defaultMonth(); setRange({key:m.key,day:1},{key:m.key,day:m.days}); }
