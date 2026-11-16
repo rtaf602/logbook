@@ -69,15 +69,47 @@
   };
 
   // ---------- ภารกิจ: โหลดทั้งปีงบครั้งเดียว แล้วแจกให้ทุกเดือนที่หน้าเว็บติดตามอยู่ ----------
+  // ---------- จำข้อมูลภารกิจชุดล่าสุดไว้ในเครื่อง (ผู้ใช้เลือกแบบ ก 16 พ.ย. 2026) ----------
+  // เปิดหน้าแล้วแสดงข้อมูลที่จำไว้ทันที แล้วแทนด้วยข้อมูลจากฐานข้อมูลเมื่อตอบมา
+  // ผูกกับการ Login ครั้งนั้น: เข้ารหัส (AES-GCM) ด้วยกุญแจที่ได้จาก session ของ Login · Login ใหม่ / บัญชีอื่น = อ่านไม่ได้และถูกลบ
+  // ลบทิ้งเมื่อกดออกจากระบบ, Login หมดเวลา (1 ชั่วโมง), ไม่มีสิทธิ์ใช้งานเว็บนี้ หรือเปิดหน้านี้ตอนไม่มีการ Login
+  const CK = "airlog.cache:", te = new TextEncoder();
+  const b64 = u => btoa(String.fromCharCode(...new Uint8Array(u))), unb64 = t => Uint8Array.from(atob(t), c => c.charCodeAt(0));
+  const hex = u => [...new Uint8Array(u)].map(b => b.toString(16).padStart(2, "0")).join("");
+  async function cacheCtx() {
+    const s = AUTH && AUTH.session(); if (!s || !window.crypto || !crypto.subtle) return null;
+    const raw = await crypto.subtle.digest("SHA-256", te.encode("logbook-cache|" + s.token));
+    const tag = hex(await crypto.subtle.digest("SHA-256", te.encode("logbook-tag|" + s.token))).slice(0, 16);
+    return { tag, key: await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]) };
+  }
+  function clearCache() { try { Object.keys(localStorage).filter(k => k.indexOf(CK) === 0).forEach(k => localStorage.removeItem(k)); } catch (e) { } }
+  async function cachePut(fy, entries) {
+    try { const c = await cacheCtx(); if (!c) return; const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, c.key, te.encode(JSON.stringify({ at: Date.now(), entries })));
+      localStorage.setItem(CK + fy, JSON.stringify({ t: c.tag, iv: b64(iv), ct: b64(ct) })); } catch (e) { }
+  }
+  async function cacheGet(fy) {
+    try { const box = JSON.parse(localStorage.getItem(CK + fy) || "null"); if (!box) return null;
+      const c = await cacheCtx(); if (!c || box.t !== c.tag) { localStorage.removeItem(CK + fy); return null; }
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(box.iv) }, c.key, unb64(box.ct));
+      return JSON.parse(new TextDecoder().decode(pt)); } catch (e) { return null; }
+  }
+  window.LOGBOOK_CACHE = { clear: clearCache, staleAt: fy => { const s = FY[fy]; return s && !s.loaded && s.cachedAt ? s.cachedAt : 0; } };
+
   const FY = {};
-  const fyState = fy => FY[fy] || (FY[fy] = { byYm: {}, loaded: false, subs: new Set(), busy: null });
+  const fyState = fy => FY[fy] || (FY[fy] = { byYm: {}, loaded: false, subs: new Set(), busy: null, cacheTried: false, cachedAt: 0 });
+  const byYmOf = list => { const by = {}; (list || []).forEach(e => { (by[e.ym] = by[e.ym] || []).push(e); }); return by; };
+  function fromCache(fy) {
+    const s = fyState(fy); if (s.cacheTried) return; s.cacheTried = true;
+    cacheGet(fy).then(c => { if (c && !s.loaded && Array.isArray(c.entries)) { s.byYm = byYmOf(c.entries); s.cachedAt = c.at || 1; emitFy(fy); } });
+  }
   function emitFy(fy) { fyState(fy).subs.forEach(s => { try { s.fire(); } catch (e) { } }); }
   function refreshFy(fy) {
     const s = fyState(fy);
     if (s.busy) return s.busy;
     s.busy = call(fy, "entries").then(j => {
-      const by = {}; (j.entries || []).forEach(e => { (by[e.ym] = by[e.ym] || []).push(e); });
-      s.byYm = by; s.loaded = true; emitFy(fy);
+      s.byYm = byYmOf(j.entries); s.loaded = true; s.cachedAt = 0; emitFy(fy);
+      cachePut(fy, j.entries || []);
     }).catch(err => { s.subs.forEach(x => x.err && x.err(err)); }).finally(() => { s.busy = null; });
     return s.busy;
   }
@@ -110,7 +142,8 @@
       onSnapshot(next, err) {
         const s = fyState(fy), sub = { fire: () => next(snapOf(s.byYm[ym])), err };
         s.subs.add(sub);
-        if (s.loaded) setTimeout(sub.fire, 0); else refreshFy(fy);
+        if (s.loaded || s.cachedAt) setTimeout(sub.fire, 0);
+        if (!s.loaded) { fromCache(fy); refreshFy(fy); }
         return () => s.subs.delete(sub);
       },
       async get() { await refreshFy(fy); return snapOf(fyState(fy).byYm[ym]); },
