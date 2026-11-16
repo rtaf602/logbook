@@ -30,7 +30,7 @@
   }
   const say = (name, detail) => setTimeout(() => window.dispatchEvent(new CustomEvent(name, { detail })), 0);
 
-  async function call(fy, action, payload, noWait) {
+  async function call(fy, action, payload, noWait, retried) {
     if (!API) throw fail("ยังไม่ได้ตั้งค่าฐานข้อมูล (config.js)", "unavailable");
     if (!noWait) await readyP;
     const body = JSON.stringify(Object.assign({ action, fy: fy || undefined, pass: PASS, admin: window.__adminPass || "" }, payload || {}));
@@ -40,6 +40,8 @@
     let j; try { j = await res.json(); } catch (e) { throw fail("ฐานข้อมูลตอบกลับไม่ถูกต้อง (ตรวจการ Deploy Web app)", "bad_response"); }
     if (!j.ok) {
       const c = j.code;
+      // บัตรผ่านที่จำไว้หมดอายุ: ขอใบใหม่จากระบบ Login แล้วลองซ้ำหนึ่งครั้ง ก่อนถือว่า Login หมด
+      if (c === "auth" && !retried && sess()) { try { await getPass(true); return await call(fy, action, payload, true, true); } catch (e) { if (e.code !== "auth") throw e; } }
       if (c === "auth") say("logbook:auth-lost");                                   // Login หมด / ถูกใช้ที่เครื่องอื่น
       else if (c === "no_web" || c === "web_closed" || c === "wrong_web") say("logbook:denied", j.error);
       else if (c === "forbidden") say("logbook:forbidden", j.error);
@@ -51,10 +53,11 @@
   window.LOGBOOK_AUTH = {
     async start() {
       await getPass(false);
-      let j;
-      try { j = await call(0, "me", null, true); }
-      catch (e) { if (e.code !== "auth") throw e; await getPass(true); j = await call(0, "me", null, true); }   // บัตรผ่านเก่าที่จำไว้
-      ME = j.me || null; ready(); return ME;
+      // ข้อมูล (ภารกิจ รายการตัวเลือก สนามบิน) เริ่มโหลดพร้อมกับการถามว่าเป็นใคร ไม่ต้องรอกัน (หน้าเว็บเร็วขึ้น)
+      // Apps Script ตรวจบัตรผ่านกับระบบ Login ทุกคำขออยู่แล้ว
+      ready();
+      const j = await call(0, "me", null, true);
+      ME = j.me || null; return ME;
     },
     async renew() { await getPass(true); const j = await call(0, "me", null, true); ME = j.me || ME; return ME; },
     me: () => ME,

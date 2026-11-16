@@ -1173,6 +1173,7 @@ function subscribeRange(){
   for(const k of keys){ if(state.subs[k]) continue;
     state.subs[k] = state.db.collection(`months/${k}/entries`).onSnapshot(snap => {
       state.mrows[k] = snap.docs.map(d => ({id:d.id, _ym:k, ...d.data()}));
+      if(!state.loaded){ state.loaded = true; if($("status").dataset.loading){ $("status").hidden = true; delete $("status").dataset.loading; } }
       rebuildRows(); render(); resolveNames();
     }, err => showStatus("โหลดข้อมูลไม่สำเร็จ ("+err.code+") ลองรีเฟรชหน้า", true));
   }
@@ -1297,9 +1298,9 @@ function render(){
 
   renderSumx();
 
-  $("listCount").textContent = `${rows.length} รายการ · ${rangeLabel()}`;
+  $("listCount").textContent = state.loaded ? `${rows.length} รายการ · ${rangeLabel()}` : `กำลังโหลดข้อมูล… · ${rangeLabel()}`;
   if(!rows.length){
-    const msg = !state.db ? "ยังเชื่อมต่อฐานข้อมูลไม่ได้" :
+    const msg = !state.db ? "ยังเชื่อมต่อฐานข้อมูลไม่ได้" : !state.loaded ? "กำลังโหลดข้อมูล…" :
       state.rows.length ? "ไม่มีรายการตรงกับตัวกรองที่เลือก" : `ยังไม่มีบันทึกในช่วง ${rangeLabel()} — ไปที่หน้า “บันทึกข้อมูล” เพื่อเพิ่มรายการ`;
     $("logTbl").innerHTML = `<tbody><tr><td class="empty">${msg}</td></tr></tbody>`; return;
   }
@@ -2464,6 +2465,7 @@ else {
     showStatus("ยังไม่ได้ตั้งค่าฐานข้อมูล — ใส่ลิงก์ Web app ของ Apps Script ใน config.js", true); return;
   }
   state.db = db;
+  showStatus("กำลังโหลดข้อมูลภารกิจจากฐานข้อมูล… (ครั้งแรกหลังเปิดหน้าอาจใช้เวลาหลายวินาที)"); $("status").dataset.loading = "1";
   db.doc("config/airports").onSnapshot(s => { state.apItems = s.exists ? (s.data().items||[]) : null; if(state.apItems) buildApIndex(state.apItems); }, ()=>{});
   db.doc("config/lists").onSnapshot(s => {
     if(s.exists){ const d=s.data(); state.lists = {
